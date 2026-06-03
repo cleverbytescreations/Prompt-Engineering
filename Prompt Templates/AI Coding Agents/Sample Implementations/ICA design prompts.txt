@@ -1,0 +1,403 @@
+
+Input file to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+
+please compare the implementation plan with the uscases and make sure that the scope is compeltly covered. If there is any gap, show me the report.
+
+>>> please fix all the gaps
+
+========================================================================================
+Input file to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+
+please compare the API endpoints from the implementation plan with the current impleemntation of the demo UI (under frontend folder) and see if there is any gap & show me the report.
+
+========================================================================================
+
+Create a plan to update these gaps with enough details for a developer along with the following instructions.
+
+1. Create a detailed task list that covers 100% of the scope / gap
+2. Each task should contain enough implementation details for a developer to work independently.
+3. Each task should be grouped under a module
+4. All tasks must be marked as incomplete using [ ] by default.
+5. Do not implement any code in this step.
+6. Save the generated task list under the following location 
+
+Output file:
+------------
+Docs/demo-application-gap-fix-tasklist.md
+
+========================================================================================
+
+>>> Prompt to Generate Scope / Requirement Document:
+
+You are an experienced Business Analyst, Product Owner, and Solution Architect.
+
+I have a use case document in Markdown format for a ICA Restricted Legal Platform. Your task is to analyze the provided use case file and create a detailed Scope / Requirement Document.
+
+Note: Solution should focus on the advantages of Docling and livekit frameworks if required to address any usecases.
+
+Input file to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+
+Output file:
+------------
+- Docs/requirement-document.md
+
+
+Preferred Technology Stack:
+---------------------------
+UI: Next.js (App Router) with React, TypeScript, Tailwind CSS, MUI, React Query, Zustand
+Backend: FastAPI (Python) with SQLAlchemy, Pydantic, Celery (async workers)
+Database: PostgreSQL (system of record); Redis (cache + message broker)
+Search: OpenSearch - hybrid BM25 (full-text) + k-NN (vector/semantic) search
+Storage: MinIO (development / local) -> AWS S3 (production)
+Authentication: Custom OAuth2 / JWT (email + password login, invite-only signup, token refresh via FastAPI core/security layer); SMTP / SendGrid for password reset flows
+AI / RAG: sentence-transformers (all-MiniLM-L6-v2) for local embeddings; OpenAI text-embedding-3-small as cloud alternative; OpenSearch k-NN as the vector store; RAG pipeline orchestrated via Celery workers (chunking -> embedding -> indexing)
+- If any requirement is unclear, list it under "Clarifications Required".
+Deployment: Docker Compose (development); production target is containerised (Docker), cloud-deployable (AWS S3 / managed services implied)
+
+Objective:
+Create a complete Scope / Requirement Document from the use case file.
+
+The document should include:
+
+1. Introduction
+   - Purpose of the platform
+   - Background
+   - Target users
+   - Business objectives
+
+2. Scope of the Application
+   - In-scope features
+   - Out-of-scope items
+   - Assumptions
+   - Dependencies
+   - Constraints
+
+3. User Roles and Access Levels
+   - Admin
+   - Moderator / Legal Office
+   - Member / Professional User
+   - Guest / Public User, if applicable
+   - Any other roles identified from the use case
+
+4. Functional Requirements
+   Organize the requirements module-wise, such as:
+   - User registration and authentication
+   - Member approval / restricted access
+   - Legal document repository
+   - Country-wise / region-wise legal database
+   - News and legal update aggregation
+   - Moderated Q&A / discussion forum
+   - Content publishing workflow
+   - Search and filtering
+   - Notifications
+   - Admin management
+   - Reports and dashboards
+   - Audit trail and activity tracking
+
+5. Detailed Requirement Table
+   For each requirement, provide:
+   - Requirement ID
+   - Module
+   - Requirement description
+   - User role
+   - Priority: Must Have / Should Have / Could Have
+   - Complexity: Low / Medium / High
+   - Remarks
+
+6. Non-Functional Requirements
+   Cover:
+   - Security
+   - Authentication and authorization
+   - Data privacy
+   - Auditability
+   - Performance
+   - Scalability
+   - Availability
+   - Maintainability
+   - Backup and recovery
+   - Compliance considerations
+
+7. Workflow Requirements
+   Include workflow descriptions for:
+   - Member onboarding
+   - Legal content submission and approval
+   - Question submission and moderation
+   - Answer publishing
+   - News publishing
+   - Admin review and audit
+
+8. Reporting Requirements
+   Include:
+   - User activity reports
+   - Content usage reports
+   - Country-wise legal content reports
+   - Q&A status reports
+   - Moderator activity reports
+
+9. MVP Scope
+   Identify the minimum features required for the first release.
+
+10. Future Enhancements
+   Identify features that can be planned for later phases, such as:
+   - AI-based semantic search
+   - RAG-based legal assistant
+   - Multi-language support
+   - Advanced analytics
+   - API integrations with external legal sources
+   - Mobile app
+
+11. Acceptance Criteria
+   Provide clear acceptance criteria for major modules.
+
+Output Format:
+- Use professional software requirement document format.
+- Use clear headings and tables.
+- Avoid vague statements.
+- Convert the use cases into actionable requirements.
+- Clearly separate MVP scope and future scope.
+- If any requirement is unclear, list it under “Clarifications Required”.
+
+========================================================================================
+
+>>> Prompt to Generate Solution Architecture Document:
+
+You are an experienced Enterprise Solution Architect.
+
+I have a use case document and requirement document for a ICA Restricted Legal Platform. Your task is to create a complete Solution Architecture Document.
+
+Files to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+- Docs/requirement-document.md
+
+
+Output file:
+------------
+- Docs/Solution-Architecture-Document.md
+
+Preferred Technology Stack:
+---------------------------
+UI: Next.js (App Router) with React, TypeScript, Tailwind CSS, MUI, React Query, Zustand
+Backend: FastAPI (Python) with SQLAlchemy, Pydantic, Celery (async workers)
+Database: PostgreSQL (system of record); Redis (cache + message broker)
+Search: OpenSearch - hybrid BM25 (full-text) + k-NN (vector/semantic) search
+Storage: MinIO (development / local) -> AWS S3 (production)
+Authentication: Custom OAuth2 / JWT (email + password login, invite-only signup, token refresh via FastAPI core/security layer); SMTP / SendGrid for password reset flows
+AI / RAG: sentence-transformers (all-MiniLM-L6-v2) for local embeddings; OpenAI text-embedding-3-small as cloud alternative; OpenSearch k-NN as the vector store; RAG pipeline orchestrated via Celery workers (chunking -> embedding -> indexing)
+- If any requirement is unclear, list it under "Clarifications Required".
+Deployment: Docker Compose (development); production target is containerised (Docker), cloud-deployable (AWS S3 / managed services implied)
+
+
+Objective:
+Create a complete Solution Architecture Document for the ICA Restricted Legal Platform.
+
+The document should include:
+
+1. Architecture Overview
+   - Business context
+   - Architecture goals
+   - Key architectural principles
+   - High-level system overview
+
+2. Proposed Technology Stack
+   Provide a table with:
+   - Layer
+   - Recommended technology
+   - Purpose
+   - Reason for selection
+
+3. High-Level Architecture
+   Describe the major components:
+   - Web UI
+   - API Gateway / Backend API
+   - Authentication and authorization service
+   - User and role management service
+   - Legal content management service
+   - Legal document repository service
+   - News aggregation / publishing service
+   - Moderated Q&A service
+   - Search service
+   - Notification service
+   - Reporting and analytics service
+   - Audit logging service
+   - Admin console
+   - Database
+   - File storage
+   - Optional AI / RAG layer
+
+4. Architecture Diagram Description
+   Provide a textual architecture diagram using Mermaid syntax.
+
+Example format:
+
+```mermaid
+flowchart LR
+    User[Restricted User / Member] --> UI[Web UI]
+    Admin[Admin / Moderator] --> UI
+    UI --> API[Backend API Layer]
+    API --> Auth
+    API --> DB[(PostgreSQL)]
+    API --> Search[OpenSearch]
+    API --> Storage[MinIO]
+    API --> Notify[Email Notification Service]
+    API --> Audit[Audit Log Service]
+
+5. Module-wise Architecture
+	Explain each major module:
+
+	User Management
+	Role and Access Control
+	Legal Content Repository
+	Country-wise Legal Database
+	News and Updates
+	Moderated Q&A
+	Search and Filtering
+	Notification
+	Reports and Dashboard
+	Audit Trail
+	Admin Configuration
+
+6. Data Architecture
+	Include the major entities:
+
+	User
+	Organization / Member Institution
+	Role
+	Country
+	Legal Document
+	Legal Category
+	News Article
+	Question
+	Answer
+	Moderation Status
+	Comment / Discussion
+	Notification
+	Audit Log
+
+	Provide an initial ERD using Mermaid syntax.
+
+7. Security Architecture
+	Cover:
+
+	Authentication
+	Authorization
+	Role-based access control
+	Restricted user access
+	Moderator approval flow
+	Data privacy
+	Secure document access
+	API security
+	Audit logging
+	Admin controls
+
+8. Search Architecture
+	Explain:
+
+	Keyword search
+	Filter-based search
+	Country-wise search
+	Legal category search
+	Full-text search
+	Optional semantic search using embeddings
+
+9. AI / RAG Architecture, if applicable
+	Include:
+
+	Document ingestion
+	Text extraction
+	Chunking
+	Embedding generation
+	Vector storage
+	Retrieval
+	LLM-based response generation
+	Citation-based legal answer generation
+	Human review / moderation requirement
+
+10. Deployment Architecture
+	Include:
+	Development environment
+	UAT environment
+	Production environment
+	Docker-based deployment
+	Kubernetes-ready deployment
+	CI/CD pipeline overview
+
+11. API Architecture
+	Include high-level API groups:
+	Auth APIs
+	User APIs
+	Legal Content APIs
+	Country / Category APIs
+	News APIs
+	Q&A APIs
+	Moderation APIs
+	Search APIs
+	Notification APIs
+	Admin APIs
+	Reporting APIs
+
+12. Non-Functional Architecture
+	Explain how the solution addresses:
+	Scalability
+	Security
+	Performance
+	Availability
+	Maintainability
+	Observability
+	Backup and recovery
+	Compliance
+
+13. MVP Architecture
+	Clearly identify the architecture needed for MVP only.
+
+14. Future Architecture Enhancements
+	Include:
+	AI legal assistant
+	Multi-language support
+	Mobile app
+	API integration with external legal databases
+	Advanced analytics
+	Workflow engine
+
+Output Format:
+
+	Use professional architecture document format.
+	Include tables wherever useful.
+	Include Mermaid diagrams.
+	Make the architecture practical and implementable.
+	Avoid over-engineering the MVP.
+	Clearly separate MVP architecture and future architecture.
+
+
+=========================================================================================
+Files to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+- Docs/requirement-document.md
+
+Please compare the implementation plan with the requirement document and make sure that it is 100% aligned. If there is any gap, show me th report.
+
+=========================================================================================
+
+>>> Review the impleemntation plan
+
+Files to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+- Docs/requirement-document.md
+- Docs/Solution-Architecture-Document.md
+
+Please compare the implementation-plan with the solution architecture document and let me know if there is any gap in the implementation plan
+
+
+========================================================================================
+
+
+2. Docs/implementation-plan.md
+3. Docs/tasks.md

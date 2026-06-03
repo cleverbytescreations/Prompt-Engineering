@@ -1,0 +1,29 @@
+>>> Implement tasks (CMS)
+
+Files to refer:
+---------------
+1. Docs/CMS_Implementation_Plan.md
+2. Docs/CMS_Implementation_Task_Checklist.md
+3. Docs/DDL-consultant-management-system.sql
+
+
+Objective:
+----------
+Implement the following task from the task list:
+
+9.1 ORM Models
+9.2 Adapters
+9.3 Notification Service
+9.4 Celery Tasks
+9.5 Resilience
+9.6 API Endpoints & SSE
+
+Instructions:
+-------------
+1. Review the referenced files before implementation.
+2. Follow the existing project architecture and coding standards.
+3. Add or update required backend, frontend, API, database, validation, security, logging, and test files as needed.
+4 When creating a new Alembic migration, set down_revision to the current single head by running alembic heads first and chaining to it — never hardcode a revision without verifying it is the actual head.
+5 When creating a new Alembic migration, make sure that - these migration will be executed during docker startup.
+6. Create related test cases to cover the new feature changes.Show me the test execution output.
+7. Mark the completed tasks [x] after all changes & testing are compelted successfully.

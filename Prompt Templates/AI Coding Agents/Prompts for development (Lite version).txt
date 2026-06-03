@@ -1,0 +1,1408 @@
+
+>>> Prompt to Generate Scope / Requirement Document:
+
+You are an experienced Business Analyst, Product Owner, and Solution Architect.
+
+I have a use case document in Markdown format for a <Application name>. Your task is to analyze the provided use case file and create a detailed Scope / Requirement Document.
+
+Input file to refer:
+- Docs/<USECASE_FILE_NAME>.md
+
+Output file:
+------------
+Docs/requirement-document.md
+
+Preferred Technology Stack:
+- UI: <React / Next.js / Angular / Vue - mention preferred UI framework>
+- Backend: <FastAPI / Spring Boot / Node.js>
+- Database: <PostgreSQL / MySQL>
+- Search: <Elasticsearch / OpenSearch>
+- Storage: <S3 / MinIO / Azure Blob>
+- Authentication: <Keycloak / Auth0 / Azure AD / custom OAuth2>
+- AI / RAG, if applicable: <OpenAI / Azure OpenAI / local LLM / vector DB>
+- Deployment: <Docker / Kubernetes / Cloud / On-premise>
+
+Objective:
+Create a complete Scope / Requirement Document from the use case file.
+
+The document should include:
+
+1. Introduction
+   - Purpose of the platform
+   - Background
+   - Target users
+   - Business objectives
+
+2. Scope of the Application
+   - In-scope features
+   - Out-of-scope items
+   - Assumptions
+   - Dependencies
+   - Constraints
+
+3. User Roles and Access Levels
+   - Admin
+   - Moderator / Legal Office
+   - Member / Professional User
+   - Guest / Public User, if applicable
+   - Any other roles identified from the use case
+
+4. Functional Requirements
+   Organize the requirements module-wise, such as:
+   - User registration and authentication
+   - Member approval / restricted access
+   - Legal document repository
+   - Country-wise / region-wise legal database
+   - News and legal update aggregation
+   - Moderated Q&A / discussion forum
+   - Content publishing workflow
+   - Search and filtering
+   - Notifications
+   - Admin management
+   - Reports and dashboards
+   - Audit trail and activity tracking
+
+5. Detailed Requirement Table
+   For each requirement, provide:
+   - Requirement ID
+   - Module
+   - Requirement description
+   - User role
+   - Priority: Must Have / Should Have / Could Have
+   - Complexity: Low / Medium / High
+   - Remarks
+
+6. Non-Functional Requirements
+   Cover:
+   - Security
+   - Authentication and authorization
+   - Data privacy
+   - Auditability
+   - Performance
+   - Scalability
+   - Availability
+   - Maintainability
+   - Backup and recovery
+   - Compliance considerations
+
+7. Workflow Requirements
+   Include workflow descriptions for:
+   - Member onboarding
+   - Legal content submission and approval
+   - Question submission and moderation
+   - Answer publishing
+   - News publishing
+   - Admin review and audit
+
+8. Reporting Requirements
+   Include:
+   - User activity reports
+   - Content usage reports
+   - Country-wise legal content reports
+   - Q&A status reports
+   - Moderator activity reports
+
+9. MVP Scope
+   Identify the minimum features required for the first release.
+
+10. Future Enhancements
+   Identify features that can be planned for later phases, such as:
+   - AI-based semantic search
+   - RAG-based legal assistant
+   - Multi-language support
+   - Advanced analytics
+   - API integrations with external legal sources
+   - Mobile app
+
+11. Acceptance Criteria
+   Provide clear acceptance criteria for major modules.
+
+Output Format:
+- Use professional software requirement document format.
+- Use clear headings and tables.
+- Avoid vague statements.
+- Convert the use cases into actionable requirements.
+- Clearly separate MVP scope and future scope.
+- If any requirement is unclear, list it under “Clarifications Required”.
+
+=========================================================================================
+
+>>> Prompt to Generate Solution Architecture Document:
+
+
+---
+
+## Smaller Token-Saving Version
+
+```text
+You are an experienced Enterprise Solution Architect.
+
+Using the provided use case, requirement, scope, or functional specification documents, create a practical and implementation-ready Solution Architecture Document for:
+
+Application Name:
+<APPLICATION_NAME>
+
+Files to Refer:
+- <USECASE_FILE>.md
+- <REQUIREMENT_FILE>.md
+- <SCOPE_FILE>.md
+- <OTHER_REFERENCE_FILES>.md
+
+Output File:
+Docs/SOLUTION_ARCHITECTURE_DOCUMENT.md
+
+Preferred Tech Stack:
+- UI: <React / Next.js / Angular / Vue / Other>
+- Backend: <FastAPI / Spring Boot / Node.js / .NET / Other>
+- API: <REST / GraphQL / gRPC>
+- DB: <PostgreSQL / MySQL / SQL Server / MongoDB>
+- Auth: <Keycloak / OAuth2 / OIDC / Auth0 / Azure AD>
+- Storage: <S3 / MinIO / Azure Blob / Local>
+- Search: <OpenSearch / Elasticsearch / DB Full-text / Optional>
+- Cache/Queue: <Redis / Kafka / RabbitMQ / Optional>
+- Deployment: <Docker / Kubernetes / VM / Cloud / On-premise>
+- AI/RAG: <Required / Optional / Not Applicable>
+
+Create the document with the following sections:
+
+1. Executive Summary
+   - Purpose of the solution
+   - Business context
+   - Key business problems addressed
+   - Expected benefits
+   - Target users / stakeholders
+   - High-level solution summary
+
+2. Scope, Assumptions, Constraints, and Dependencies
+   - In-scope modules
+   - Out-of-scope items
+   - MVP scope
+   - Future scope
+   - Assumptions
+   - Constraints and dependencies
+   
+3. Architecture Goals and Principles
+   - Scalability
+   - Security by design
+   - Modular architecture
+   - API-first design
+   - Maintainability
+   - Observability
+   - Performance optimization
+   - Cloud/on-premise readiness
+   - Cost-conscious design
+   - AI-readiness, if applicable
+   
+4. Proposed Technology Stack with reason for selection
+   Provide a table with the following columns:
+   - Layer
+   - Recommended Technology
+   - Purpose
+   - Reason for Selection
+   - MVP / Future / Optional
+
+   Cover the following layers where applicable:
+   - Frontend
+   - Backend
+   - API Gateway
+   - Authentication
+   - Database
+   - Cache
+   - Search
+   - File/Object Storage
+   - Queue/Messaging
+   - Notification
+   - Reporting/Analytics
+   - AI/ML/RAG
+   - Logging/Monitoring
+   - Deployment
+   - CI/CD
+   
+5. High-Level Architecture Overview
+   Describe the complete system at a high level.
+
+   Include:
+   - User-facing applications
+   - Admin console
+   - Backend API layer
+   - Authentication and authorization
+   - Business services/modules
+   - Database layer
+   - File storage
+   - Search layer
+   - Notification layer
+   - Reporting layer
+   - External integrations
+   - Optional AI/ML/RAG layer
+   - Audit and observability layer
+
+6. Mermaid Architecture Diagram
+   Provide a Mermaid diagram using flowchart syntax.
+
+   The diagram should show:
+   - Users
+   - UI layer
+   - API/backend layer
+   - Authentication service
+   - Core business services
+   - Database
+   - File storage
+   - Search engine
+   - Notification service
+   - External systems
+   - Optional AI/RAG layer
+   - Monitoring/logging/audit components
+
+   Use this format:
+
+   ```mermaid
+   flowchart LR
+       User[End User] --> UI[Web / Mobile UI]
+       Admin[Admin User] --> AdminUI[Admin Console]
+       UI --> API[Backend API Layer]
+       AdminUI --> API
+       API --> Auth[Authentication / IAM]
+       API --> DB[(Primary Database)]
+       API --> Storage[File / Object Storage]
+       API --> Search[Search Engine]
+       API --> Notify[Notification Service]
+       API --> Audit[Audit Log]
+       API --> External[External Systems / APIs]
+
+7. Module-wise Architecture
+	Identify all major modules from the requirement/use case document.
+
+	For each module, explain:
+
+	Purpose
+	Key responsibilities
+	Main features
+	APIs required
+	Database entities involved
+	Security considerations
+	Integration dependencies
+	MVP or Future classification
+
+	Common module examples:
+
+	User Management
+	Role and Access Control
+	Dashboard
+	Master Data Management
+	Core Business Workflow
+	Document Management
+	Search and Filtering
+	Notification
+	Reports and Analytics
+	Audit Trail
+	Admin Configuration
+	External Integration
+	AI/ML/RAG, if applicable
+
+8. Data Architecture and Mermaid ERD
+	Explain the proposed data architecture.
+
+	Include:
+
+	Core entities
+	Master tables
+	Transactional tables
+	Audit/log tables
+	Configuration tables
+	Reporting/analytics tables, if required
+	File metadata tables, if document upload is involved
+	Tenant-related tables, if multi-tenancy is required
+
+	Provide an initial ERD using Mermaid syntax.
+
+	Example:
+	erDiagram
+	    USER ||--o{ USER_ROLE : has
+	    ROLE ||--o{ USER_ROLE : assigned_to
+	    USER ||--o{ AUDIT_LOG : performs
+	    ORGANIZATION ||--o{ USER : owns
+	    DOCUMENT ||--o{ DOCUMENT_VERSION : has
+
+9. API Architecture and API Groups
+	Provide a high-level API architecture.
+
+	Include:
+
+	API design approach
+	REST/GraphQL/gRPC recommendation
+	API versioning
+	Authentication and authorization for APIs
+	Error handling standard
+	Request/response standard
+	Pagination, sorting, and filtering
+	File upload/download APIs
+	Audit logging for sensitive APIs
+
+	Provide API groups such as:
+
+	Auth APIs
+	User APIs
+	Role/Permission APIs
+	Master Data APIs
+	Core Business APIs
+	Workflow APIs
+	Document APIs
+	Search APIs
+	Notification APIs
+	Report APIs
+	Admin APIs
+	Integration APIs
+
+10. Security Architecture
+	Explain how security will be implemented.
+
+	Cover:
+
+	Authentication
+	Authorization
+	Role-based access control
+	Attribute-based access control, if required
+	Multi-factor authentication, if required
+	Token management
+	Session management
+	API security
+	Input validation
+	File upload security
+	Data encryption in transit
+	Data encryption at rest
+	Secrets management
+	Audit logging
+	Admin activity tracking
+	Secure configuration management
+	OWASP best practices
+	Compliance requirements, if applicable
+
+11. User, Role, and Access Control Architecture
+	Include:
+	User types
+	Role types
+	Permission model
+	Access control flow
+	Admin privileges
+	Approval/moderation flow, if applicable
+	Organization/tenant-level access, if applicable
+
+12. Workflow Architecture, if applicable
+	Include this section only if the application has approval, review, lifecycle, or process workflows.
+
+	Explain:
+
+	Workflow states
+	State transitions
+	Approval levels
+	Reviewer/moderator roles
+	Escalation rules
+	Notifications
+	Audit trail
+	Configurable workflow support
+
+	Provide a Mermaid state diagram if useful.
+
+13. Search Architecture, if applicable
+	Include this section if the application requires search functionality.
+
+	Cover:
+
+	Keyword search
+	Full-text search
+	Filter-based search
+	Advanced search
+	Faceted search
+	Search indexing strategy
+	Search result ranking
+	Access-controlled search results
+	Optional semantic/vector search
+
+14. AI/ML/RAG Architecture, if applicable
+	Include this section only if AI, ML, NLP, LLM, semantic search, document intelligence, or RAG is part of the requirement.
+
+	Cover:
+
+	AI use cases
+	Document ingestion
+	Text extraction
+	Chunking strategy
+	Embedding generation
+	Vector storage
+	Retrieval flow
+	LLM integration
+	Prompt management
+	Citation-based response generation
+	Human review requirement
+	Guardrails
+	AI audit logging
+	Cost and rate-limit considerations
+	External LLM vs local LLM option
+
+15. Integration Architecture, if applicable
+	Include:
+	External systems
+	Integration patterns
+	API-based integration
+	Batch integration
+	Webhook/event-based integration
+	Authentication with external systems
+	Retry and failure handling
+	Circuit breaker pattern
+	Data transformation
+	Integration audit logs
+
+16. Notification Architecture, if applicable
+17. Reporting and Analytics Architecture
+	Include:
+	Operational reports
+	Dashboard requirements
+	Role-based dashboards
+	Export options
+	Report filters
+	Aggregation strategy
+	Analytics database/view strategy, if required
+	Future BI/AI analytics options
+
+18. Deployment Architecture with Mermaid diagram
+	Explain the deployment approach.
+
+	Cover:
+
+	Development environment
+	Testing environment
+	UAT environment
+	Production environment
+	Docker-based deployment
+	Kubernetes-ready deployment
+	Environment-specific configuration
+	Reverse proxy / ingress
+	SSL/TLS
+	Scaling approach
+	Backup and restore
+	Disaster recovery basics
+
+	Provide a deployment diagram using Mermaid syntax.
+
+19. DevOps and CI/CD Architecture
+	Include:
+	Source code branching strategy
+	Build pipeline
+	Test pipeline
+	Security scanning
+	Docker image build
+	Deployment pipeline
+	Environment promotion
+	Rollback strategy
+	Release management
+
+20. Observability Architecture
+	Cover:
+	Application logging
+	API request logging
+	Error logging
+	Audit logging
+	Metrics
+	Health checks
+	Distributed tracing, if required
+	Alerting
+	Monitoring dashboard
+
+21. Non-Functional Architecture
+	Explain how the solution addresses:
+	Scalability
+	Performance
+	Security
+	Availability
+	Reliability
+	Maintainability
+	Extensibility
+	Observability
+	Backup and recovery
+	Compliance
+	Usability
+	Accessibility
+	Data privacy
+
+22. MVP Architecture
+23. Production/Full-Scale Architecture
+	Explain the architecture needed for enterprise-grade production deployment.
+
+	Include:
+
+	High availability
+	Horizontal scaling
+	Load balancing
+	Separate services
+	Advanced monitoring
+	Advanced security
+	Backup and DR
+	Performance optimization
+
+24. Future Architecture Enhancements
+25. Risks and Mitigation
+26. Architecture Decisions
+	Provide an Architecture Decision Record table with:
+	Decision
+	Options Considered
+	Recommended Option
+	Reason
+	Impact
+
+27. Open Questions
+28. Conclusion
+
+Guidelines:
+- Make the architecture practical and implementable.
+- Clearly separate MVP, full-scope, and future architecture.
+- Mark optional sections as applicable only if required.
+- Avoid over-engineering the MVP.
+- Include tables and Mermaid diagrams wherever useful.
+- Do not implement code.
+- Do not invent unsupported features.
+- Clearly mention assumptions where details are missing.
+
+=========================================================================================
+
+>>> Generate Implementation Plan:
+
+Files to refer:
+---------------
+1. Docs/PHASE_SCOPE.md
+2. Docs/SYSTEM_ARCHITECTURE.md
+3. Docs/DDL_DATAMODEL.sql
+
+Objective:
+----------
+Create a detailed implementation plan for Phase 1.
+
+Instructions:
+-------------
+1. Review the referenced scope, architecture, and database files.
+2. Create a practical implementation plan for developers.
+3. Break the implementation into logical work streams.
+4. Include backend, frontend, database, API, integration, validation, security, logging, testing, and deployment considerations.
+5. Mention technical dependencies and sequencing.
+6. Do not implement any code in this step.
+7. Save the implementation plan under the following location:
+
+Output file:
+------------
+Docs/PHASE_IMPLEMENTATION_PLAN.md
+
+Expected output format:
+-----------------------
+# Phase 1 Implementation Plan
+
+## 1. Overview
+## 2. Implementation Approach
+## 3. Module-wise Implementation Plan
+## 4. Backend Implementation
+## 5. Frontend Implementation
+## 6. API Implementation
+## 7. Database Implementation
+## 8. Authentication and Authorization
+## 9. Validation and Error Handling
+## 10. Logging and Audit Trail
+## 11. Integration Requirements
+## 12. Testing Strategy
+## 13. Deployment Considerations
+## 14. Implementation Sequence
+## 15. Risks and Mitigation
+
+=========================================================================================
+
+>>> Review the impleemntation plan
+
+Files to refer:
+- Docs/use-cases.md
+- Docs/implementation-plan.md
+- Docs/requirement-document.md
+- Docs/Solution-Architecture-Document.md
+
+Please compare the implementation-plan with the solution architecture document and let me know if there is any gap in the implementation plan
+
+=========================================================================================
+
+>>> Generate OpenAPI / Swagger documentation:
+
+Files to refer:
+1. Docs/Solution-Architecture-Document.md
+2. Docs/implementation-plan.md
+
+Objective:
+Generate a complete OpenAPI / Swagger documentation for the application based on the solution architecture and implementation plan.
+
+Instructions:
+1. Review both referenced documents carefully before generating the API specification.
+2. Identify all modules, services, user roles, business workflows, integrations, and data entities mentioned in the documents.
+3. Generate a complete OpenAPI 3.0 or 3.1 compliant specification.
+4. The API specification should be suitable for backend implementation, frontend integration, API testing, and client review.
+
+Output file:
+Save the generated OpenAPI documentation under:
+
+Docs/API_SPECIFICATION_OPENAPI.md
+
+Required sections:
+1. API Overview
+   - Application name
+   - API purpose
+   - API consumers
+   - API style: REST
+   - Base URL placeholders for Dev, QA, UAT, and Production
+
+2. Authentication and Authorization
+   - Authentication mechanism
+   - Token format
+   - Role-based access control
+   - Tenant identification, if applicable
+   - Common authorization rules
+
+3. Common API Standards
+   - URL naming conventions
+   - HTTP methods
+   - Request/response format
+   - Pagination standard
+   - Filtering and sorting
+   - Idempotency rules
+   - Date/time format
+   - File upload/download standard
+
+4. Common Headers
+   - Authorization
+   - Content-Type
+   - Accept
+   - X-Tenant-ID, if applicable
+   - Correlation ID / Request ID
+
+5. Common Response Structure
+   - Success response format
+   - Error response format
+   - Validation error format
+   - Pagination response format
+
+6. Error Code Design
+   - HTTP status codes
+   - Application-level error codes
+   - Validation errors
+   - Authentication and authorization errors
+   - Business rule errors
+
+7. API Endpoint Specification
+   For each module, provide:
+   - API name
+   - Endpoint path
+   - HTTP method
+   - Purpose
+   - Required role/permission
+   - Request headers
+   - Path parameters
+   - Query parameters
+   - Request body schema
+   - Response body schema
+   - Success response example
+   - Error response examples
+
+8. Data Schemas
+   - Request DTOs
+   - Response DTOs
+   - Common DTOs
+   - Enum definitions
+   - Validation rules
+
+9. Integration APIs
+   - External system APIs
+   - Callback/webhook APIs
+   - Background job APIs, if applicable
+   - Event-driven APIs, if applicable
+
+10. Security Considerations
+   - Input validation
+   - Rate limiting
+   - CORS
+   - Audit logging
+   - Sensitive data masking
+   - API versioning
+   - Access control rules
+
+11. OpenAPI YAML
+   Generate a valid OpenAPI YAML section covering:
+   - openapi version
+   - info
+   - servers
+   - securitySchemes
+   - tags
+   - paths
+   - components/schemas
+   - components/responses
+   - components/parameters
+   - components/securitySchemes
+
+Validation instructions:
+1. Ensure all APIs mentioned in the implementation plan are covered.
+2. Ensure the API design aligns with the solution architecture.
+3. Do not invent unrelated APIs.
+4. If any API details are missing, infer them logically and mark them as:
+   Assumption: <details>
+5. Ensure the OpenAPI YAML is syntactically valid.
+6. Ensure endpoint naming is consistent and RESTful.
+7. Ensure all request and response schemas are reusable where possible.
+8. Ensure frontend developers can use this document without additional clarification.
+
+Output format:
+- Use Markdown format.
+- Include OpenAPI YAML inside a fenced code block.
+- Use clear module-wise grouping.
+- Keep the documentation implementation-ready.
+
+
+=========================================================================================
+
+>>> Generate or Validate DDL / Data Model :
+
+Files to refer:
+---------------
+1. Docs/PHASE_SCOPE.md
+2. Docs/PHASE_IMPLEMENTATION_PLAN.md
+3. Docs/SYSTEM_ARCHITECTURE.md
+
+Objective:
+----------
+Generate or validate the database DDL required for the current Phase.
+
+Instructions:
+-------------
+1. Review the scope, implementation plan, and architecture documents.
+2. Identify all required tables, columns, primary keys, foreign keys, indexes, constraints, audit columns, and lookup/reference tables.
+3. Ensure naming conventions are consistent.
+4. Ensure the DDL supports features completely.
+5. Include comments wherever required.
+6. Do not implement application code in this step.
+7. Save the generated or updated DDL under the following location:
+
+Output file:
+------------
+Docs/DDL_DATAMODEL.sql
+
+Expected output:
+----------------
+A clean SQL DDL file containing:
+1. Table creation scripts
+2. Alter scripts, if required
+3. Primary keys
+4. Foreign keys
+5. Indexes
+6. Unique constraints
+7. Audit columns
+8. Default values
+9. Lookup/reference data inserts, if required
+
+=========================================================================================
+
+>>> Generate Detailed Task Checklist:
+
+Files to refer:
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/SOLUTION_ARCHITECTURE_DOCUMENT.md
+3. Docs/DDL_DATAMODEL.sql
+
+Objective:
+----------
+Create a detailed developer task checklist for the above implementation plan for phase 1. 
+Refer the scope of phase 1 from the Solution Architecture Document (#2).
+
+
+Instructions:
+-------------
+1. Review the implementation plan carefully.
+2. Create a detailed task list that covers 100% of the Phase 1 implementation scope.
+3. Each task should contain enough implementation details for a developer to work independently.
+4. Include tasks for backend, frontend, APIs, database, validation, error handling, security, testing, and documentation.
+4.1 All UI related tasks should be saved under the UI task list (e.g. PHASE_1_UI_TASK_CHECKLIST.md). 
+4.2 Rest of the tasks (backend, APIs, database, validation, error handling etc) should be saved under API task list (e.g. PHASE_1_API_TASK_CHECKLIST.md)
+5. Each task should be grouped under a module (e.g. Module 4   Document Management)
+5. All tasks must be marked as incomplete using [ ] by default.
+6. Do not implement any code in this step.
+7. Save the generated task list under the following location - UI & API tasks should be created separately:
+
+Output file:
+------------
+1. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+2. Docs/PHASE_1_API_TASK_CHECKLIST.md
+
+Task format:
+------------
+- [ ] Task ID & Title: (e.g. T4.1.1 [L]   Implement POST /documents upload endpoint)
+      Description:
+      Files / Components to be changed:
+      Implementation Notes:
+      Acceptance Criteria:
+
+Expected output structure:
+--------------------------
+
+# Implementation Task Checklist (UI Task list)
+## 1. Frontend Tasks 
+
+# Implementation Task Checklist (API)
+## 1. Backend Tasks
+## 2. API Tasks
+## 3. Database Tasks
+## 4. Integration Tasks
+## 5. Security Tasks
+## 6. Logging and Audit Tasks
+## 7. Testing Tasks
+## 8. Documentation Tasks
+
+=========================================================================================
+
+>>>Validate Task Checklist Against Implementation Plan 
+
+Files to refer:
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+3. Docs/PHASE_1_API_TASK_CHECKLIST.md
+
+Objective:
+----------
+Validate the generated task checklist against the Phase 1 implementation plan.
+
+Instructions:
+-------------
+1. Review the implementation plan and the task checklist.
+2. Confirm whether the task checklist covers 100% of the implementation plan.
+3. Identify any missing tasks, incomplete coverage, duplicate tasks, unclear tasks, or wrongly grouped tasks.
+4. Do not modify the task checklist unless explicitly instructed.
+5. Provide a validation report for review.
+
+Output file:
+------------
+Docs/PHASE_1_UI_TASK_VALIDATION_REPORT.md
+Docs/PHASE_1_API_TASK_VALIDATION_REPORT.md
+
+Expected output format:
+-----------------------
+# Task Checklist Validation Report
+
+## 1. Validation Summary
+Clearly state whether the task list fully covers the implementation plan.
+
+## 2. Coverage Matrix
+| Implementation Area | Covered? | Task IDs | Remarks |
+|---------------------|----------|----------|---------|
+
+## 3. Missing Tasks
+List all missing tasks, if any.
+
+## 4. Duplicate or Overlapping Tasks
+List duplicate or overlapping tasks, if any.
+
+## 5. Tasks Requiring More Detail
+List tasks that need clarification.
+
+## 6. Final Recommendation
+Mention whether the task checklist is ready for implementation.
+
+
+=========================================================================================
+
+>>> Task implementation
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/SYSTEM_ARCHITECTURE.md
+3. Docs/PHASE_1_API_TASK_CHECKLIST.md
+4. Docs/PHASE_1_SPRINT_PLAN.md
+5. docker-compose.yml
+
+
+Objective:
+----------
+Implement the following task from the task list:
+
+<Task list>
+
+Instructions:
+-------------
+1. Review the referenced files before implementation (if required - lazy loading).
+2. Follow the existing project architecture and coding standards.
+3. Add or update required backend, frontend, API, database, validation, security, logging, and test files as needed.
+4. When creating a new Alembic migration, set down_revision to the current single head by running alembic heads first and chaining to it   never hardcode a revision without verifying it is the actual head.
+5. When creating a new Alembic migration, make sure that - these migration will be executed during docker startup.
+6. Create related test cases to cover the new feature changes.Show me the test execution output.
+7. Mark the completed tasks [x] after all changes & testing are compelted successfully.
+
+
+8. Run the test case and show the output report to makes ure that 100% coverage & no failure.
+9. After successful implementation, mark only this task as completed [x] 
+10. Provide a completion summary with:
+   - Task ID
+   - Files changed
+   - Summary of changes
+   - Tests added or updated
+   - Pending assumptions or limitations
+
+3. Docs\DDL - AI Agents & Workflow Management.sql
+
+
+================================================================================================
+
+>>> Review Implemented Task 
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/SYSTEM_ARCHITECTURE.md
+3. Docs/PHASE_1_API_TASK_CHECKLIST.md
+4. Docs/PHASE_1_SPRINT_PLAN.md
+5. docker-compose.yml
+
+Task to review:
+---------------
+<Task ID / Task Name / task group name>
+
+Objective:
+----------
+Review the implemented task for correctness, completeness, and alignment with the implementation plan.
+
+Instructions:
+-------------
+1. Review the implementation against the selected task.
+2. Confirm whether the implementation satisfies the acceptance criteria.
+3. Check for code quality, security, validation, error handling, logging, and test coverage.
+4. Confirm whether the task was correctly marked as completed in the checklist.
+5. Provide a review report.
+
+Following are the code change report:
+-------------------------------------
+
+=========================================================================================
+
+>>> UI implementation tasks (Lite - React)
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/API_SPECIFICATION_OPENAPI.md
+3. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+4. Docs/PHASE_1_SPRINT_PLAN.md
+5. docker-compose.yml
+
+Objective:
+----------
+Implement the following UI task from the checklist:
+
+<Task list>
+
+Instructions:
+-------------
+1. Review the referenced files before implementation (if required - lazy loading).
+2. Follow the existing React UI architecture, folder structure, coding standards, and design patterns.
+3. Use the approved UI stack where applicable:
+   React + TypeScript, Vite, React Router, TanStack Query, Zustand, Axios, Tailwind CSS, Shadcn/UI, React Hook Form, Zod, XState, Recharts, SSE/EventSource.
+4. Add or update all required UI files:
+   pages, components, hooks, API services, query hooks, stores, types, validation schemas, routes, RBAC guards, and tests.
+5. Use the existing Axios API client and TanStack Query for all API calls.
+   - Do not duplicate API client logic.
+   - Use typed request/response models.
+   - Invalidate relevant query keys after mutations.
+6. Implement proper UI states:
+   loading, empty, error, success toast, validation errors, mutation loading, and confirmation dialog for destructive actions.
+7. Apply RBAC:
+   - Protect routes where required.
+   - Hide or disable unauthorized actions.
+8. Forms must use React Hook Form + Zod validation.
+9. Ensure responsive UI, dark/light mode support, keyboard accessibility, labels, aria attributes, and focus handling.
+10. Add or update tests using Vitest + React Testing Library/MSW.
+    Cover happy path, validation, loading, empty, error, mutation, and RBAC behavior where relevant.
+11. Run and show final successful output:
+    - npm run type-check
+    - npm run lint
+    - npm run test
+    - npm run build
+12. Fix any failures and re-run the failed command.
+13. Mark completed checklist items as `[x]` in:
+    Docs/PHASE_1_UI_TASK_CHECKLIST.md
+
+Important:
+----------
+Do not mark a task as complete unless implementation, tests, type-check, lint, and build are successful.
+
+Expected Output:
+----------------
+1. Summary of changes
+2. Files created/modified
+3. API endpoints integrated
+4. Tests added/updated
+5. Command outputs
+6. Checklist items marked complete
+7. Assumptions or pending backend dependencies
+
+=========================================================================================
+
+>>> UI implementation tasks (Lite - Angular)
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/API_SPECIFICATION_OPENAPI.md
+3. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+4. Docs/PHASE_1_SPRINT_PLAN.md
+5. docker-compose.yml
+
+Task:
+Implement the following Angular UI checklist item(s):
+
+<Task list>
+
+Instructions:
+1. Review the referenced docs first (if required - lazy loading).
+2. Follow existing Angular architecture, folder conventions, coding standards, and design patterns.
+3. Use the approved Angular UI stack where applicable:
+   Angular, TypeScript, Angular Router, HttpClient, RxJS, Signals/Services for state, Reactive Forms, Angular Material or existing component library, SCSS/Tailwind if already used, Chart.js/ngx-charts for charts, and EventSource/WebSocket for real-time updates.
+4. Add/update required modules, standalone components, services, route configs, guards, interceptors, models/interfaces, validators, pipes, directives, shared components, and tests.
+5. Use the existing HttpClient service/interceptor pattern for all API calls.
+   - Do not duplicate API client logic.
+   - Attach JWT and `X-Tenant-ID` through existing interceptors.
+   - Use typed request/response models.
+   - Handle token refresh and API errors through the existing auth/error flow.
+6. Implement proper UI states:
+   loading, empty, error, success toast/snackbar, validation errors, submit loading, and confirmation dialog for destructive actions.
+7. Apply RBAC:
+   - Protect routes using Angular route guards.
+   - Hide or disable unauthorized actions in templates.
+8. Forms must use Reactive Forms with custom validators where required.
+9. Ensure responsive UI, dark/light mode support, keyboard accessibility, labels, aria attributes, and focus handling.
+10. Add or update tests using Angular TestBed, Jasmine/Karma or Jest as used in the project.
+    Cover happy path, validation, loading, empty, error, submit action, API failure, and RBAC behavior where relevant.
+11. Run and show final successful output:
+   npm run type-check
+   npm run lint
+   npm run test
+   npm run build
+12. Fix any failures and re-run the failed command.
+13. Mark completed items as `[x]` in Docs/PHASE_1_UI_TASK_CHECKLIST.md only after successful implementation and verification.
+
+Output:
+- Summary
+- Files changed
+- APIs used
+- Tests added/updated
+- Command output
+- Checklist updates
+- Assumptions/pending dependencies
+
+=========================================================================================
+
+>>> Sprint-wise task planning
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+3. Docs/PHASE_1_API_TASK_CHECKLIST.md
+4. Docs/PHASE_2_UI_TASK_CHECKLIST.md
+5. Docs/PHASE_2_API_TASK_CHECKLIST.md
+
+Can you provide a two weeks springt plan to provide a usable modules in each sprint in the order of phase 1 and then phase 2? 
+
+Special isntructions: 
+----------------------
+Total duration for -
+1) Phase 1 is 3 months duration
+2) Phase 2 is 2 months duration
+
+===========================================================================================
+
+>>> UI implementation tasks (Full prompt)
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/Docs/SYSTEM_ARCHITECTURE.md
+3. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+
+
+Objective:
+----------
+Implement the following UI task from the UI task checklist:
+
+<Task list>
+
+
+Instructions:
+-------------
+1. Review all referenced files before implementation.
+
+2. Follow the existing frontend architecture, folder structure, naming conventions, coding standards, and UI design patterns.
+
+3. Implement the task using the approved frontend stack:
+   - React + TypeScript
+   - Vite
+   - React Router
+   - TanStack Query
+   - Zustand
+   - Axios
+   - Tailwind CSS
+   - Shadcn/UI
+   - React Hook Form + Zod
+   - XState, only where the task involves multi-step or complex UI flow
+   - Recharts, only where charts or dashboards are required
+   - SSE/EventSource, only where real-time notification or dashboard refresh is required
+
+4. Add or update all required UI files, including but not limited to:
+   - Page components
+   - Feature components
+   - Shared components
+   - API service functions
+   - TanStack Query hooks
+   - Zustand stores
+   - TypeScript types/interfaces
+   - Zod validation schemas
+   - Route definitions
+   - RBAC route guards or button-level permission checks
+   - Loading, empty, and error states
+   - Toast or notification handling
+   - Unit/integration tests
+
+5. Ensure API integration is consistent with the backend API design:
+   - Use the existing Axios API client.
+   - Attach JWT token and `X-Tenant-ID` through existing interceptors.
+   - Do not duplicate API client logic inside feature components.
+   - Use typed request/response models.
+   - Use TanStack Query for all server-state fetching and mutations.
+   - Invalidate or refresh relevant query keys after successful mutations.
+
+6. UI and UX requirements:
+   - Use existing Shadcn/UI and shared components wherever possible.
+   - Maintain consistent layout, spacing, typography, colors, and status badges.
+   - Support both light and dark mode.
+   - Ensure responsive behavior for mobile, tablet, and desktop.
+   - Show loading skeletons for data loading.
+   - Show empty states when no records are available.
+   - Show proper error messages for API failures.
+   - All destructive actions must use a confirmation dialog.
+   - All mutation buttons must show loading state while the request is in progress.
+
+7. Validation and form handling:
+   - Use React Hook Form for forms.
+   - Use Zod schemas for validation.
+   - Show user-friendly validation messages.
+   - Prevent form submission when validation fails.
+   - Handle backend validation errors and map them to fields wherever possible.
+
+8. RBAC and security:
+   - Apply route-level RBAC guards where applicable.
+   - Hide or disable action buttons for unauthorized users.
+   - Do not expose unauthorized data or actions in the UI.
+   - Avoid storing sensitive data unnecessarily in localStorage.
+   - Do not hardcode tenant IDs, tokens, API URLs, roles, or secrets.
+
+9. Accessibility:
+   - All interactive elements must be keyboard accessible.
+   - Add `aria-label` for icon-only buttons.
+   - Ensure form fields have proper labels.
+   - Ensure modals/dialogs trap focus.
+   - Ensure visible focus indicators.
+   - Avoid color-only indicators for statuses.
+
+10. Testing:
+   - Create or update relevant tests using Vitest and React Testing Library.
+   - Mock API calls using MSW where applicable.
+   - Test happy path, validation errors, loading state, empty state, and API error state.
+   - For route/page tasks, test that the page renders correctly with mocked API data.
+   - For mutation tasks, test successful mutation and query invalidation behavior.
+   - For RBAC-sensitive tasks, test that unauthorized buttons or routes are hidden/blocked.
+
+11. Code quality:
+   - Ensure TypeScript strict mode compatibility.
+   - Do not use `any` unless absolutely unavoidable; prefer proper interfaces/types.
+   - Avoid duplicate code; extract reusable components/hooks where appropriate.
+   - Keep components modular and readable.
+   - Follow existing import alias conventions.
+   - Remove unused imports, console logs, commented dead code, and temporary files.
+
+12. After implementation, run and show the output of:
+   - npm install, only if new packages are added
+   - npm run type-check
+   - npm run lint
+   - npm run test
+   - npm run build
+
+13. If any command fails:
+   - Fix the issue.
+   - Re-run the failed command.
+   - Show the final successful output.
+   - If a failure cannot be fixed due to missing backend/API dependency, clearly mention the reason and provide the mock/stub used.
+
+14. Mark the completed checklist items as `[x]` in:
+   - Docs/PHASE_1_UI_TASK_CHECKLIST.md
+
+15. Do not mark any task as completed unless:
+   - The UI is implemented.
+   - API integration or mock integration is working.
+   - Required tests are added or updated.
+   - Type-check, lint, tests, and build are successful.
+
+Expected Output:
+----------------
+After implementation, provide:
+
+1. Summary of implemented UI changes.
+2. List of files created or modified.
+3. API endpoints integrated.
+4. Tests added or updated.
+5. Test/build command output.
+6. Checklist items marked as completed.
+7. Any assumptions, limitations, or pending backend dependencies.
+
+==================================================================================================
+
+>>> UI implementation tasks (Lite - React)
+
+Files to refer:
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/SYSTEM_ARCHITECTURE.md
+3. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+
+Objective:
+----------
+Implement the following UI task from the checklist:
+
+<Task list>
+
+Instructions:
+-------------
+1. Review only the sections relevant to the selected UI task, architecture, routing, API integration, RBAC, and UI conventions.
+2. Follow the existing React UI architecture, folder structure, coding standards, and design patterns.
+3. Use the approved UI stack where applicable:
+   React + TypeScript, Vite, React Router, TanStack Query, Zustand, Axios, Tailwind CSS, Shadcn/UI, React Hook Form, Zod, XState, Recharts, SSE/EventSource.
+4. Add or update all required UI files:
+   pages, components, hooks, API services, query hooks, stores, types, validation schemas, routes, RBAC guards, and tests.
+5. Use the existing Axios API client and TanStack Query for all API calls.
+   - Do not duplicate API client logic.
+   - Use typed request/response models.
+   - Invalidate relevant query keys after mutations.
+   - Do not refactor, reformat, or rewrite unrelated files.
+   - Prefer minimal, focused changes required to complete the task.
+6. Implement proper UI states:
+   loading, empty, error, success toast, validation errors, mutation loading, and confirmation dialog for destructive actions.
+7. Apply RBAC:
+   - Protect routes where required.
+   - Hide or disable unauthorized actions.
+8. Forms must use React Hook Form + Zod validation.
+9. Ensure responsive UI, dark/light mode support, keyboard accessibility, labels, aria attributes, and focus handling.
+10. Add or update tests using Vitest + React Testing Library/MSW.
+    Cover happy path, validation, loading, empty, error, mutation, and RBAC behavior where relevant.
+11. Run and show final successful output:
+    - npm run type-check
+    - npm run lint
+    - npm run test
+    - npm run build
+12. Fix any failures and re-run the failed command.
+13. Mark completed checklist items as `[x]` in:
+    Docs/PHASE_1_UI_TASK_CHECKLIST.md
+
+Important:
+----------
+Do not mark a task as complete unless implementation, tests, type-check, lint, and build are successful.
+
+Expected Output:
+----------------
+1. Summary of changes
+2. Files created/modified
+3. API endpoints integrated
+4. Tests added/updated
+5. Command outputs
+6. Checklist items marked complete
+7. Assumptions or pending backend dependencies
+
+=========================================================================================
+
+>>> React UI code review and fix — Lite
+
+Review the recently generated React UI code for the implemented task.
+
+Refer:
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/SYSTEM_ARCHITECTURE.md
+3. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+
+Objective:
+----------
+Review the recently generated/modified React UI code for possible errors, security issues, syntax problems, architectural mismatches, and incomplete implementation. Fix all valid issues with minimal changes.
+
+Implemented task:
+<Task list>
+
+
+Review and fix:
+- React/TS syntax errors
+- Invalid imports/exports
+- Type errors
+- Incorrect hook usage
+- API integration issues
+- TanStack Query usage and query invalidation
+- Form validation using React Hook Form + Zod
+- RBAC route/action protection
+- Loading, empty, error, validation, mutation, toast, and confirmation states
+- Accessibility: labels, aria, keyboard access, focus handling
+- Responsive and dark/light mode issues
+- Security issues: XSS, unsafe HTML, hardcoded secrets, sensitive logs, missing validation
+- Broken or missing relevant Vitest + RTL/MSW tests
+- Incorrect checklist status
+
+Rules:
+- Fix only real issues.
+- Use minimal focused changes.
+- Do not refactor unrelated code.
+- Reuse existing project patterns.
+- Do not add new libraries unless already approved.
+
+Run and fix failures:
+npm run type-check
+npm run lint
+npm run test
+npm run build
+
+Only mark checklist items as [x] if all validations pass.
+
+Output:
+1. Issues found
+2. Fixes applied
+3. Files modified
+4. Tests updated
+5. Command results
+6. Checklist status
+7. Pending assumptions/dependencies
+
+Following are the code change report:
+-------------------------------------
+
+===========================================================================================
+
+
+>>> Sprint-wise task planning
+
+Files to refer (if required - lazy loading):
+---------------
+1. Docs/PHASE_IMPLEMENTATION_PLAN.md
+2. Docs/PHASE_1_UI_TASK_CHECKLIST.md
+3. Docs/PHASE_1_API_TASK_CHECKLIST.md
+4. Docs/PHASE_2_UI_TASK_CHECKLIST.md
+5. Docs/PHASE_2_API_TASK_CHECKLIST.md
+
+Can you provide a two weeks springt plan to provide a usable modules in each sprint in the order of phase 1 and then phase 2? 
+
+Special isntructions: 
+----------------------
+Total duration for -
+1) Phase 1 is 3 months duration
+2) Phase 2 is 2 months duration
+
+===========================================================================================

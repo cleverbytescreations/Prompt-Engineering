@@ -1,0 +1,10 @@
+## Video script generation prompt
+
+By refering the attached demo script, please generate an application demo video script with the following conditions. 
+
+I wanted to create an applicaton demo video using this voice script and share it with ICA client:
+1. Gernerated script should be suitable for text to voice generation tool. 
+2. Order of usecases should be such that members, moderator & admin. 
+3. Script should provide clear instructions and insights into usercaese as well as how to use the application. 
+4. Total video should be long enough to cover all the features and scenarios.
+

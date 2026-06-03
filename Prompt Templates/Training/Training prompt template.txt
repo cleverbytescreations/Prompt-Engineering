@@ -1,0 +1,242 @@
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+Kubernetes / Cloud depth
+------------------------
+For senior AI Architect roles, companies may expect:
+
+production Kubernetes deployment
+autoscaling
+ingress
+GPU scheduling
+observability
+Helm
+Terraform/IaC
+cloud-native deployment patterns
+
+You need strong interview preparation here.
+
+===================================================================================================================
+
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+MLOps lifecycle depth
+
+You mention MLOps, but the resume is more architecture-heavy than operational-ML-heavy.
+
+Expect questions like:
+
+model versioning
+feature stores
+experiment tracking
+ML pipelines
+drift detection
+retraining strategies
+model registry
+inference optimization
+
+===================================================================================================================
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+LLM internals
+
+You mention LLMs well, but interviewers may test:
+
+transformer architecture
+embeddings
+attention
+tokenization
+quantization
+context window management
+inference optimization
+fine-tuning vs RAG tradeoffs
+
+===================================================================================================================
+
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+AI Architecture Mastery (Highest Priority)
+
+You should become extremely confident explaining architectures verbally.
+
+Practice designing:
+
+Enterprise RAG platform
+Multi-agent AI system
+AI governance platform
+NL-to-SQL architecture
+OCR + LLM pipeline
+AI workflow orchestration
+AI-assisted SDLC platform
+
+For every architecture, prepare:
+
+components
+scalability
+security
+observability
+caching
+tenancy
+deployment
+failure handling
+governance
+cost optimization
+
+Interviewers love asking:
+“Design an enterprise AI platform.”
+
+This should become your strongest area.
+
+===================================================================================================================
+
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+LLM + RAG Deep Understanding
+
+This is the most important technical area.
+
+You must deeply understand:
+
+embeddings
+chunking strategies
+retrieval techniques
+reranking
+vector databases
+hallucination causes
+grounding validation
+prompt engineering
+agent workflows
+memory systems
+context management
+evaluation pipelines
+
+You should also prepare tradeoffs:
+
+RAG vs fine-tuning
+OpenAI vs open-source LLMs
+vector DB vs SQL hybrid search
+agentic workflow vs deterministic workflow
+
+You already mention these concepts in the resume. Now you must defend them technically.
+
+===================================================================================================================
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+AI Governance & Responsible AI
+
+This is where your profile can stand out from ordinary AI engineers.
+
+Prepare detailed answers for:
+
+hallucination mitigation
+AI auditability
+explainability
+GDPR
+PII masking
+RBAC
+prompt injection prevention
+moderation pipelines
+human approval workflows
+compliance architecture
+tenant isolation
+
+Many companies now prioritize this heavily.
+
+===================================================================================================================
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+AI-assisted SDLC / Vibe Coding
+
+This is actually a modern advantage in your profile.
+
+Most senior architects still don’t understand this area well.
+
+Prepare practical explanations:
+
+AI coding workflows
+prompt-driven development
+architecture-to-code generation
+AI task planning
+code review with AI
+AI governance in SDLC
+limitations of coding agents
+validation strategies
+
+This can differentiate you strongly.
+
+===================================================================================================================
+
+You are an expert in providing training for IT / MNCs for more than 20 years.
+
+I want you to create a detailed training plan for the topic mentioned.
+
+Goal: You need to upskill me as a "Solution Architect – Generative AI" and provide high probability of passing the internview with this oranization.
+
+#################################################################
+
+Leadership & Communication
+
+Architect interviews are often 40% communication.
+
+Practice:
+
+whiteboard explanation
+architecture storytelling
+stakeholder conversations
+tradeoff discussions
+estimation reasoning
+delivery planning
+conflict resolution
+
+You should especially prepare:
+“How would you convince leadership to adopt AI safely?”
+
+===================================================================================================================

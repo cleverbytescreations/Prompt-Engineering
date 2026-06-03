@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High-Level Development Effort Estimation — ICA Platform</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      color: #1e293b;
+      background: #f8fafc;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 1120px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Header ── */
+    .doc-header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #1a6fa8 100%);
+      color: #fff;
+      border-radius: 12px;
+      padding: 40px 48px;
+      margin-bottom: 36px;
+    }
+    .doc-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; }
+    .doc-header .subtitle { margin-top: 6px; opacity: 0.82; font-size: 14px; }
+    .doc-header .meta { margin-top: 18px; display: flex; gap: 28px; flex-wrap: wrap; }
+    .doc-header .meta-item { opacity: 0.9; font-size: 13px; }
+    .doc-header .meta-item strong { opacity: 1; }
+
+    /* ── Section titles ── */
+    .section { margin-bottom: 44px; }
+    .section-title {
+      font-size: 18px; font-weight: 700; color: #1e293b;
+      border-left: 4px solid #1a6fa8; padding-left: 12px;
+      margin-bottom: 18px;
+    }
+    .section-subtitle {
+      font-size: 15px; font-weight: 600; color: #334155;
+      margin: 24px 0 12px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px 22px;
+      text-align: center;
+    }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-card .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card.blue .stat-value   { color: #1a6fa8; }
+    .stat-card.green .stat-value  { color: #059669; }
+    .stat-card.amber .stat-value  { color: #d97706; }
+    .stat-card.purple .stat-value { color: #7c3aed; }
+    .stat-card.rose .stat-value   { color: #e11d48; }
+
+    /* ── Tables ── */
+    .tbl-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+    thead th {
+      background: #1e3a5f; color: #fff;
+      text-align: left; padding: 11px 14px;
+      font-weight: 600; font-size: 12px; letter-spacing: 0.3px;
+    }
+    thead th:first-child { border-radius: 9px 0 0 0; }
+    thead th:last-child  { border-radius: 0 9px 0 0; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:hover { background: #eff6ff; }
+    tbody td { padding: 9px 14px; border-top: 1px solid #f1f5f9; }
+    tfoot td { padding: 10px 14px; background: #1e3a5f; color: #fff; font-weight: 700; font-size: 13px; border-top: 2px solid #1a6fa8; }
+    tfoot td:first-child { border-radius: 0 0 0 9px; }
+    tfoot td:last-child  { border-radius: 0 0 9px 0; }
+
+    .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; margin-left: 4px;
+    }
+    .tag-be  { background: #dbeafe; color: #1e40af; }
+    .tag-fe  { background: #dcfce7; color: #166534; }
+    .tag-infra { background: #fef3c7; color: #92400e; }
+    .tag-ai  { background: #f3e8ff; color: #6b21a8; }
+
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-p1 { background: #dbeafe; color: #1d4ed8; }
+    .badge-p2 { background: #d1fae5; color: #065f46; }
+    .badge-p3 { background: #ede9fe; color: #5b21b6; }
+    .badge-high   { background: #fee2e2; color: #991b1b; }
+    .badge-medium { background: #fef3c7; color: #92400e; }
+    .badge-low    { background: #d1fae5; color: #065f46; }
+
+    /* ── Timeline bar ── */
+    .timeline { display: grid; gap: 0; margin-bottom: 28px; }
+    .tl-row { display: grid; grid-template-columns: 140px 1fr; align-items: center; min-height: 44px; }
+    .tl-label { font-size: 12px; font-weight: 600; color: #475569; padding-right: 12px; text-align: right; }
+    .tl-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .tl-bar {
+      height: 26px; border-radius: 6px; display: flex; align-items: center;
+      padding: 0 10px; font-size: 11px; font-weight: 700; color: #fff;
+      white-space: nowrap; overflow: hidden;
+    }
+    .bar-p1-api  { background: #1a6fa8; }
+    .bar-p1-ui   { background: #2563eb; }
+    .bar-p2-api  { background: #059669; }
+    .bar-p2-ui   { background: #10b981; }
+    .bar-p3-api  { background: #7c3aed; }
+    .bar-p3-ui   { background: #a78bfa; color: #3b0764; }
+    .tl-note     { font-size: 11px; color: #94a3b8; }
+
+    /* ── Phase summary boxes ── */
+    .phase-box {
+      border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
+      border-left: 5px solid;
+    }
+    .phase-box.p1 { background: #eff6ff; border-color: #1a6fa8; }
+    .phase-box.p2 { background: #ecfdf5; border-color: #059669; }
+    .phase-box.p3 { background: #f5f3ff; border-color: #7c3aed; }
+    .phase-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .phase-box.p1 h3 { color: #1e3a5f; }
+    .phase-box.p2 h3 { color: #065f46; }
+    .phase-box.p3 h3 { color: #4c1d95; }
+    .phase-box p  { font-size: 13px; color: #475569; }
+
+    /* ── Risk table colours ── */
+    td.risk-high   { color: #991b1b; font-weight: 600; }
+    td.risk-medium { color: #92400e; font-weight: 600; }
+    td.risk-low    { color: #065f46; font-weight: 600; }
+
+    /* ── Callout ── */
+    .callout {
+      border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+      border-left: 4px solid; font-size: 13px;
+    }
+    .callout-info  { background: #eff6ff; border-color: #1a6fa8; color: #1e3a5f; }
+    .callout-warn  { background: #fffbeb; border-color: #d97706; color: #78350f; }
+    .callout-note  { background: #f5f3ff; border-color: #7c3aed; color: #4c1d95; }
+
+    hr.divider { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; }
+      .doc-header { background: #1e3a5f !important; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════════════════════ -->
+  <div class="doc-header">
+    <h1>High-Level Development Effort Estimation</h1>
+    <div class="subtitle">ICA Restricted Legal Knowledge &amp; Collaboration Platform — All Three Phases</div>
+    <div class="meta">
+      <div class="meta-item"><strong>Prepared:</strong> 18 May 2026</div>
+      <div class="meta-item"><strong>Scope:</strong> Phase 1 (MVP) · Phase 2 (AI + i18n) · Phase 3 (Live / Graph / Mobile)</div>
+      <div class="meta-item"><strong>Basis:</strong> Task checklists (API + UI) for each phase</div>
+      <div class="meta-item"><strong>Unit:</strong> Person-days (senior engineer, ~7 effective hrs/day)</div>
+    </div>
+  </div>
+
+  <!-- ══ EXECUTIVE SUMMARY ════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Executive Summary</div>
+
+    <div class="card-grid">
+      <div class="stat-card blue">
+        <div class="stat-value">644 – 891</div>
+        <div class="stat-label">Total person-days (all phases)</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value">240 – 325</div>
+        <div class="stat-label">Phase 1 person-days</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-value">176 – 241</div>
+        <div class="stat-label">Phase 2 person-days</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-value">228 – 325</div>
+        <div class="stat-label">Phase 3 person-days</div>
+      </div>
+      <div class="stat-card rose">
+        <div class="stat-value">14 – 35 mo</div>
+        <div class="stat-label">Calendar time (team-size dependent)</div>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Interpretation:</strong> Estimates use a low–high range reflecting task complexity uncertainty.
+      Low end assumes no major technical blockers and a well-integrated team; high end accounts for
+      first-time integration friction, iteration cycles, and infrastructure unknowns.
+      All estimates are for <em>senior engineers</em>; mid-level resources add roughly 30 % overhead.
+    </div>
+  </div>
+
+  <!-- ══ METHODOLOGY ══════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Estimation Methodology</div>
+    <div class="card">
+      <p style="margin-bottom:12px">
+        Each task checklist entry was reviewed for implementation depth, acceptance criteria,
+        and stated implementation notes. Tasks were grouped into effort buckets:
+      </p>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th>Examples</th>
+              <th>Days / task</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Trivial</strong></td><td>Config flags, env vars, small schema migrations, documentation stubs</td><td>0.25 – 0.5</td></tr>
+            <tr><td><strong>Small</strong></td><td>Simple CRUD endpoint, reference-data hook, thin UI page</td><td>0.5 – 1.5</td></tr>
+            <tr><td><strong>Medium</strong></td><td>Auth flow, cursor pagination, moderation action, typed API client</td><td>1.5 – 3</td></tr>
+            <tr><td><strong>Large</strong></td><td>Outbox poller, hybrid search, embedded pipeline, LiveKit room, graph explorer</td><td>3 – 7</td></tr>
+            <tr><td><strong>X-Large</strong></td><td>LangGraph RAG pipeline, GDPR export + polling, microservices extraction, React Native app</td><td>7 – 15+</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-warn" style="margin-top:0">
+        <strong>Not included:</strong> Product discovery / UX design time, QA regression cycles beyond automated tests,
+        stakeholder review rounds, external vendor integration SLAs, DevOps/infrastructure provisioning for cloud
+        accounts already configured, and project management overhead (&gt; 15 %).
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 1 ═══════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Phase 1 — MVP</div>
+
+    <div class="phase-box p1">
+      <h3>Scope</h3>
+      <p>
+        Full-stack MVP: FastAPI + PostgreSQL + Redis + OpenSearch + MinIO + Celery backend with 15 API modules
+        (Auth, Users, Orgs, Invites, Repository, Q&amp;A, News, Feed, Moderation, Notifications, Search, Dashboard, Taxonomy, Admin, System);
+        transactional outbox; hybrid BM25+k-NN search; embedding pipeline; Next.js 16 App Router frontend with all corresponding views,
+        MSW demo mode, role-based access, and a typed API client.
+      </p>
+    </div>
+
+    <div class="section-subtitle">Phase 1 — Backend API</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Module / Area</th>
+            <th>Task count</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>M0 — Foundation (FastAPI skeleton, layers, middleware, schemas)</td><td>4</td><td>5</td><td>7</td><td>First-time project setup</td></tr>
+          <tr><td>M1 — Authentication &amp; Onboarding (JWT RS256, invite, login/logout, profile)</td><td>4</td><td>8</td><td>11</td><td>RS256 + argon2 + HttpOnly cookie</td></tr>
+          <tr><td>M2 — User Management (CRUD, role/status, anonymisation)</td><td>1</td><td>3</td><td>4</td><td>PII anonymisation path</td></tr>
+          <tr><td>M3 — Organisation Management</td><td>1</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M4 — Invite Management</td><td>1</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M5 — Knowledge Repository (upload, CRUD, signed URL, versions)</td><td>4</td><td>6</td><td>9</td><td>MinIO/S3 abstraction</td></tr>
+          <tr><td>M6 — Q&amp;A (questions, answers, accept, verify, assign)</td><td>2</td><td>5</td><td>7</td><td>Idempotent accept logic</td></tr>
+          <tr><td>M7 — News CRUD + versions</td><td>1</td><td>3</td><td>4</td><td></td></tr>
+          <tr><td>M8 — Social Feed (cursor pagination, likes, comments)</td><td>3</td><td>5</td><td>7</td><td>Keyset cursor + optimistic like</td></tr>
+          <tr><td>M9 — Moderation (unified queue, 5 actions, retraction)</td><td>2</td><td>5</td><td>8</td><td>Complex state machine</td></tr>
+          <tr><td>M10 — Notifications (list, read, unread-count, preferences, middleware header)</td><td>3</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>M11 — Search (hybrid BM25+kNN, cache, circuit breaker)</td><td>2</td><td>5</td><td>8</td><td>RRF merge + 800 ms hard cap</td></tr>
+          <tr><td>M12 — Dashboard</td><td>1</td><td>2</td><td>3</td><td>Replica read-through</td></tr>
+          <tr><td>M13 — Taxonomy (tags, categories, countries)</td><td>1</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M14 — Admin Stats &amp; Config</td><td>2</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M15 — Health probes &amp; Prometheus metrics</td><td>1</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>API cross-cutting (OpenAPI, pagination, idempotency, versioning, error envelope)</td><td>5</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>Database (Alembic, indexes, partitions, outbox tuning, seeds, roles, PgBouncer, OpenSearch templates, ISM, pg_stat_statements)</td><td>10</td><td>12</td><td>17</td><td>First-time schema from DDL</td></tr>
+          <tr><td>Integration (Storage, Redis, OpenSearch client, Celery, Outbox poller/dispatcher, OCR/chunking/embedding pipeline, index chain, notification dispatch, maintenance jobs, entity cache, KEDA)</td><td>17</td><td>25</td><td>38</td><td>Largest single area; pipeline complexity</td></tr>
+          <tr><td>Security (JWT, rate-limit, file upload, CORS, RBAC, Argon2, secrets, TLS, WAF/CloudFront, PII)</td><td>11</td><td>8</td><td>13</td><td></td></tr>
+          <tr><td>Logging &amp; Audit (structured logs, request-ID, OTel, Prometheus, Sentry, moderation trail, SLO alerts)</td><td>8</td><td>7</td><td>9</td><td></td></tr>
+          <tr><td>Testing (unit, integration, Celery, contract, acceptance, load, security, migration)</td><td>8</td><td>12</td><td>17</td><td></td></tr>
+          <tr><td>Backup &amp; DR (PITR, OpenSearch snapshots, S3 versioning, runbook, drill)</td><td>4</td><td>5</td><td>8</td><td></td></tr>
+          <tr><td>Documentation (README, OpenAPI export, runbook, ADRs, CI/CD, consumer guide, data model, UAT gate)</td><td>8</td><td>6</td><td>9</td><td></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Phase 1 — Backend API Total</strong></td><td><strong>105</strong></td><td><strong>140</strong></td><td><strong>190</strong></td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="section-subtitle">Phase 1 — Frontend (Next.js)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Module / Area</th>
+            <th>Task count</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>M0 — Foundation (bootstrap, MUI+Tailwind, React Query, API client, MSW, layout, shared primitives, route guard, error boundary, i18n scaffold)</td><td>10</td><td>15</td><td>22</td><td>Typed API client + MSW most expensive</td></tr>
+          <tr><td>M1 — Auth (login, invite signup, forgot/reset, setup, logout, change-password)</td><td>6</td><td>7</td><td>10</td><td></td></tr>
+          <tr><td>M2 — User Management (users table, public profile, edit profile)</td><td>3</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>M3 — Organisation Management (list, create/edit, members drawer)</td><td>2</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M4 — Invite Management</td><td>1</td><td>2</td><td>3</td><td>Copy-to-clipboard + status</td></tr>
+          <tr><td>M5 — Knowledge Repository (list, detail + PDF preview, upload, my-docs, versions drawer)</td><td>5</td><td>8</td><td>12</td><td>react-pdf integration costly</td></tr>
+          <tr><td>M6 — Q&amp;A (list, ask, detail + answer composer, my-questions, version drawer)</td><td>5</td><td>8</td><td>11</td><td>Rich-text composer</td></tr>
+          <tr><td>M7 — News (list, detail, create, my-news, version drawer)</td><td>5</td><td>5</td><td>8</td><td></td></tr>
+          <tr><td>M8 — Social Feed (infinite scroll, create post, my-posts, post detail)</td><td>4</td><td>7</td><td>10</td><td>useInfiniteQuery + optimistic like</td></tr>
+          <tr><td>M9 — Moderation (unified queue, type-specific queues, flagged queue, history drawer, retraction dialog, bulk toolbar)</td><td>6</td><td>10</td><td>14</td><td>Most complex UI module</td></tr>
+          <tr><td>M10 — Notifications (bell badge, list, preferences)</td><td>3</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>M11 — Search (global search page, keyboard shortcut modal)</td><td>2</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>M12 — Dashboard</td><td>1</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M13 — Taxonomy admin (tags + categories tree)</td><td>1</td><td>3</td><td>4</td><td>Hierarchical category tree</td></tr>
+          <tr><td>M14 — Admin Stats &amp; Config</td><td>2</td><td>4</td><td>6</td><td>Charts + config form</td></tr>
+          <tr><td>M15 — Cross-cutting (a11y audit, responsive layouts, env, unit tests, Playwright E2E, docs, ref-data hooks, empty/error state audit)</td><td>8</td><td>10</td><td>14</td><td></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Phase 1 — Frontend Total</strong></td><td><strong>64</strong></td><td><strong>100</strong></td><td><strong>140</strong></td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Phase 1</th><th>Low (days)</th><th>High (days)</th></tr></thead>
+        <tbody>
+          <tr><td>Backend API</td><td>140</td><td>190</td></tr>
+          <tr><td>Frontend</td><td>100</td><td>140</td></tr>
+        </tbody>
+        <tfoot><tr><td><strong>Phase 1 Combined</strong></td><td><strong>240</strong></td><td><strong>330</strong></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 2 ═══════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Phase 2 — AI Layer, Multi-language &amp; Knowledge Articles</div>
+
+    <div class="phase-box p2">
+      <h3>Scope</h3>
+      <p>
+        LangGraph RAG pipeline (<code>/ai/ask</code>), AI summarisation, AI content pre-screening,
+        related-content endpoints (k-NN), translation service (OpenAI / AWS Translate) with Redis cache,
+        <code>?lang=</code> content translation across all content types, EN/ES/FR UI with locale-prefix routing,
+        Q&amp;A discussion comments, promote Q&amp;A to knowledge articles, news featuring/pinning,
+        GDPR data portability export, AI cost dashboard, and back-translation.
+      </p>
+    </div>
+
+    <div class="section-subtitle">Phase 2 — Backend API</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Module / Area</th>
+            <th>Task count</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>M0 — Foundation updates (preferred_lang JWT claim, ?lang= dependency, translation cache db=1, AI disclaimer middleware)</td><td>4</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M5 — Repository Phase-2 (related docs endpoint, AI summarisation, ?lang= translation)</td><td>3</td><td>5</td><td>8</td><td></td></tr>
+          <tr><td>M6 — Q&amp;A Phase-2 (?lang=, related questions, promote to knowledge article, Q&amp;A summary, discussion comments, AI suggestions, knowledge article retrieval)</td><td>7</td><td>10</td><td>15</td><td>Promote + knowledge-article endpoints; comment CRUD</td></tr>
+          <tr><td>M7 — News Phase-2 (feature/pin, reorder, related, ?lang=)</td><td>4</td><td>5</td><td>7</td><td>Concurrent-reorder 409 logic</td></tr>
+          <tr><td>M8 — Social Feed Phase-2 (related posts)</td><td>1</td><td>1</td><td>2</td><td></td></tr>
+          <tr><td>M9 — Moderation Phase-2 (AI pre-screen flags on queue)</td><td>1</td><td>2</td><td>3</td><td>JSONB column + schema migration</td></tr>
+          <tr><td>M11 — AI/Search core (/ai/ask LangGraph, back-translation, /ai/translate, languages, ?lang= search)</td><td>5</td><td>22</td><td>35</td><td>LangGraph pipeline is the most complex deliverable in Phase 2</td></tr>
+          <tr><td>M14 — Admin Phase-2 (AI usage dashboard, supported_languages validation)</td><td>2</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M16 — GDPR export (trigger + polling endpoint, job, pre-signed URL)</td><td>1</td><td>5</td><td>8</td><td>Archive packaging + S3 TTL</td></tr>
+          <tr><td>API tasks (OpenAPI, AI envelope, rate limits, cursor pagination for comments, idempotent promote)</td><td>5</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>Database migrations (knowledge_articles, question_comments, ai_usage_events, ai_prescreen, news_featured, gdpr_export_jobs, OS templates, dual-write)</td><td>9</td><td>7</td><td>11</td><td></td></tr>
+          <tr><td>Integration (translation provider, translation/query jobs, LangGraph workers, AI content-flag, QA embedding multilingual, cache invalidation, GDPR job, AI usage tracking, outbox update, embedding migration playbook)</td><td>14</td><td>20</td><td>30</td><td>Provider abstraction + circuit breaker</td></tr>
+          <tr><td>Security (prompt injection, AI authority guard, GDPR rate-limit, pre-signed TTL, key rotation, RBAC for suggestions)</td><td>6</td><td>5</td><td>8</td><td>Prompt injection tests required</td></tr>
+          <tr><td>Logging &amp; Audit (AI audit trail, usage metrics, confidence histogram, translation cache ratio, moderation escalation log, GDPR audit)</td><td>6</td><td>5</td><td>8</td><td></td></tr>
+          <tr><td>Testing (LangGraph node coverage, /ai/ask integration, translation circuit-breaker, ?lang= content, promote idempotency, comments, news feature, related, cost dashboard, GDPR, security, load test, embedding migration dry-run)</td><td>14</td><td>14</td><td>20</td><td></td></tr>
+          <tr><td>Documentation + Infrastructure (OpenAPI export, LangGraph runbook, translation runbook, AI compliance doc, consumer guide, data model, deployment delta, UAT gate, celery-ai worker)</td><td>9</td><td>6</td><td>9</td><td></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Phase 2 — Backend API Total</strong></td><td><strong>91</strong></td><td><strong>116</strong></td><td><strong>179</strong></td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="section-subtitle">Phase 2 — Frontend (Next.js)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Module / Area</th>
+            <th>Task count</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>M0 — Foundation (ES/FR locales + locale switcher, ?lang= in API fetchers, AI disclaimer component, AI MSW handlers)</td><td>4</td><td>8</td><td>13</td><td>Locale-prefix routing changes are far-reaching</td></tr>
+          <tr><td>M5 — Repository Phase-2 (related docs panel, AI summary modal)</td><td>2</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M6 — Q&amp;A Phase-2 (AI suggestions panel, thread summary, promote button, discussion comments, related Q&amp;A, non-EN notice)</td><td>6</td><td>8</td><td>12</td><td>Optimistic comment + cursor pagination</td></tr>
+          <tr><td>M7 — News Phase-2 (feature toggle + drag reorder, featured carousel, related panel)</td><td>3</td><td>5</td><td>8</td><td>Drag-reorder UX</td></tr>
+          <tr><td>M8 — Social Feed Phase-2 (related posts panel)</td><td>1</td><td>1</td><td>2</td><td></td></tr>
+          <tr><td>M9 — Moderation Phase-2 (AI pre-screen chip, moderator AI suggestion link)</td><td>2</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M10 — Notifications Phase-2 (question_commented, GDPR export notification types)</td><td>2</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M11 — AI Ask tab (answer + citations + confidence, back-translation badge, translation fallback UX, language picker, translation utility)</td><td>5</td><td>8</td><td>13</td><td>Citation cards + confidence UI</td></tr>
+          <tr><td>M14 — Admin Phase-2 (AI usage charts + CSV export, supported languages editor, confidence threshold config)</td><td>3</td><td>5</td><td>8</td><td>Chart library integration</td></tr>
+          <tr><td>M16 — Profile Phase-2 (GDPR export page, preferred language editor)</td><td>2</td><td>3</td><td>5</td><td>Polling pattern for export job</td></tr>
+          <tr><td>M18 — Knowledge Articles (detail route, list + search-result variant, promote toast deep-link)</td><td>3</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>Cross-cutting (Playwright for Phase-2 flows + Phase-1 regression, a11y re-audit for AI panels, README update)</td><td>3</td><td>4</td><td>6</td><td></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Phase 2 — Frontend Total</strong></td><td><strong>36</strong></td><td><strong>53</strong></td><td><strong>84</strong></td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Phase 2</th><th>Low (days)</th><th>High (days)</th></tr></thead>
+        <tbody>
+          <tr><td>Backend API</td><td>116</td><td>179</td></tr>
+          <tr><td>Frontend</td><td>53</td><td>84</td></tr>
+        </tbody>
+        <tfoot><tr><td><strong>Phase 2 Combined</strong></td><td><strong>169</strong></td><td><strong>263</strong></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 3 ═══════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Phase 3 — Live Sessions, Knowledge Graph, Mobile &amp; Scale</div>
+
+    <div class="phase-box p3">
+      <h3>Scope</h3>
+      <p>
+        LiveKit live expert sessions (video/audio rooms, recording, transcription, auto-draft news),
+        Neo4j/Neptune knowledge graph with entity extraction pipeline,
+        SSE real-time notifications stream, WebSocket private messaging,
+        FCM/APNS push notifications, external legal API integrations (<code>legal_import_job</code>),
+        personalised recommendations (OpenSearch percolator + feature store),
+        organisation-level content siloing (<code>org_visibility</code>),
+        expanded language support including Arabic/RTL,
+        React Native (Expo) mobile app,
+        and microservices extraction of Search + AI services behind a Kong API gateway.
+      </p>
+    </div>
+
+    <div class="section-subtitle">Phase 3 — Backend API</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Module / Area</th>
+            <th>Task count</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>M0 — Foundation (org_visibility JWT, WebSocket support, SSE helper, gateway prep)</td><td>4</td><td>6</td><td>10</td><td>WS auth is non-trivial</td></tr>
+          <tr><td>M10 — Notifications Phase-3 (SSE stream, push subscriptions, FCM/APNS dispatch)</td><td>3</td><td>6</td><td>10</td><td>Redis pub/sub per-user channel</td></tr>
+          <tr><td>M17 — Live Expert Sessions (LiveKit room CRUD, participant token, webhooks, recording, session_event_job, transcription)</td><td>6</td><td>12</td><td>20</td><td>Depends on LiveKit Cloud/self-hosted setup</td></tr>
+          <tr><td>M18 — Knowledge Graph (explore, search, entity detail, entity extraction pipeline, Neo4j integration)</td><td>4</td><td>14</td><td>22</td><td>Neo4j provisioning + SpaCy/LLM extraction</td></tr>
+          <tr><td>M19 — Private Messaging (DB schema, REST history, WebSocket endpoint, audit log)</td><td>4</td><td>10</td><td>16</td><td>WS reconnect + cursor resume</td></tr>
+          <tr><td>M20 — External Legal Imports (import_sources CRUD, legal_import_job, is_official column)</td><td>3</td><td>7</td><td>12</td><td>Robots.txt / rate-limit compliance</td></tr>
+          <tr><td>M21 — Recommendations (cross-content rail, per-type endpoints, feature store, percolator)</td><td>4</td><td>12</td><td>20</td><td>Cold-start + feature pipeline complexity</td></tr>
+          <tr><td>M22 — Org-level Content Siloing (org_visibility column, filter at SQL + OpenSearch, per-org default)</td><td>3</td><td>7</td><td>12</td><td>OpenSearch filter required in all queries</td></tr>
+          <tr><td>M23 — Expanded Language Support (AR/PT, RTL, per-language OpenSearch analyzers)</td><td>2</td><td>4</td><td>7</td><td>Bidi text validation</td></tr>
+          <tr><td>M24 — Microservices Extraction (Search service, AI service, mTLS/service JWT, gateway routing)</td><td>3</td><td>14</td><td>22</td><td>Highest risk; parallel integration tests required</td></tr>
+          <tr><td>API cross-cutting (OpenAPI, pagination, rate limits, webhook sig, health probe)</td><td>5</td><td>4</td><td>6</td><td></td></tr>
+          <tr><td>Database (sessions, messaging/audit, push_subscriptions, import_sources, org_visibility, recommendation_events, Neo4j provisioning, messages partitioning, PG scale-out)</td><td>9</td><td>10</td><td>16</td><td>Neo4j cluster setup is infrastructure-heavy</td></tr>
+          <tr><td>Integration (LiveKit server deploy, Neo4j client, Redis pub/sub, FCM/APNS, entity extraction, legal import, session_event, percolator, recommendation feature pipeline, gateway routing)</td><td>10</td><td>18</td><td>28</td><td></td></tr>
+          <tr><td>Security (LiveKit token scoping, WS auth + rate-limit, webhook HMAC, audit immutability, org siloing tests, push revocation, import secret mgmt, mTLS, graph access control)</td><td>9</td><td>9</td><td>14</td><td></td></tr>
+          <tr><td>Logging &amp; Audit (session events, messaging audit, push metrics, graph write metrics, recommendation events, import run logs, microservice trace propagation)</td><td>7</td><td>6</td><td>9</td><td></td></tr>
+          <tr><td>Testing (sessions lifecycle, WS messaging, SSE, org-visibility, graph endpoints, recommendations, legal import, push, contract tests, load test 100 rooms + 1k WS, security regression)</td><td>11</td><td>12</td><td>18</td><td></td></tr>
+          <tr><td>Documentation (Phase-3 OpenAPI, LiveKit runbook, graph schema + runbook, messaging compliance, push setup, microservices extraction runbook, org-visibility design doc, legal source onboarding, data model + ERD, acceptance gate)</td><td>10</td><td>8</td><td>12</td><td></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Phase 3 — Backend API Total</strong></td><td><strong>97</strong></td><td><strong>149</strong></td><td><strong>234</strong></td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="section-subtitle">Phase 3 — Frontend (Next.js + React Native)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Module / Area</th>
+            <th>Task count</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>M0 — Foundation (RTL + AR/PT locales, SSE client, org-visibility awareness, push permission UX, Phase-3 MSW handlers)</td><td>5</td><td>10</td><td>16</td><td>RTL + MUI direction cache is nuanced</td></tr>
+          <tr><td>M5 — Repository Phase-3 (official-source badge + filter, knowledge-graph CTA)</td><td>2</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M6 — Q&amp;A Phase-3 (live session CTA)</td><td>1</td><td>1</td><td>2</td><td></td></tr>
+          <tr><td>M8 — Feed Phase-3 (personalised recommendations rail)</td><td>1</td><td>2</td><td>3</td><td></td></tr>
+          <tr><td>M10 — Notifications Phase-3 (SSE-driven panel, push preference toggles)</td><td>2</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M11 — Search Phase-3 (knowledge graph side panel)</td><td>2</td><td>3</td><td>5</td><td></td></tr>
+          <tr><td>M14 — Admin Phase-3 (imports manager, live session admin, Phase-3 dashboards, org-visibility controls)</td><td>4</td><td>6</td><td>10</td><td></td></tr>
+          <tr><td>M18 — Live Expert Sessions (list, LiveKit room page, create form, recording playback, device check)</td><td>5</td><td>12</td><td>18</td><td>LiveKit SDK bundle + device API</td></tr>
+          <tr><td>M19 — Knowledge Graph Explorer (graph canvas, entity drawer, controls, search integration, saved views)</td><td>5</td><td>12</td><td>18</td><td>react-flow / sigma.js; 200-node perf</td></tr>
+          <tr><td>M20 — Private Messaging (conversations list, message thread + WS, new-conversation modal, read receipts)</td><td>4</td><td>10</td><td>15</td><td>WS reconnect + optimistic send</td></tr>
+          <tr><td>M21 — Native Mobile (shared types package, Expo project bootstrap, push handling, bottom-tab nav, store submission readiness)</td><td>5</td><td>22</td><td>35</td><td>Entire separate app; highest uncertainty</td></tr>
+          <tr><td>M22 — Cross-cutting (Phase-3 Playwright flows, a11y for media/graph pages, Lighthouse CI budgets, README + mobile onboarding)</td><td>4</td><td>5</td><td>8</td><td></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Phase 3 — Frontend Total</strong></td><td><strong>40</strong></td><td><strong>88</strong></td><td><strong>138</strong></td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Phase 3</th><th>Low (days)</th><th>High (days)</th></tr></thead>
+        <tbody>
+          <tr><td>Backend API</td><td>149</td><td>234</td></tr>
+          <tr><td>Frontend</td><td>88</td><td>138</td></tr>
+        </tbody>
+        <tfoot><tr><td><strong>Phase 3 Combined</strong></td><td><strong>237</strong></td><td><strong>372</strong></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ CONSOLIDATED SUMMARY ═════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Consolidated Summary</div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Backend tasks</th>
+            <th>Frontend tasks</th>
+            <th>Total tasks</th>
+            <th>Low (days)</th>
+            <th>High (days)</th>
+            <th>Mid-point (days)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-p1">Phase 1 — MVP</span></td>
+            <td>105</td><td>64</td><td>169</td>
+            <td><strong>240</strong></td><td><strong>330</strong></td><td><strong>285</strong></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-p2">Phase 2 — AI + i18n</span></td>
+            <td>91</td><td>36</td><td>127</td>
+            <td><strong>169</strong></td><td><strong>263</strong></td><td><strong>216</strong></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-p3">Phase 3 — Live / Graph / Mobile</span></td>
+            <td>97</td><td>40</td><td>137</td>
+            <td><strong>237</strong></td><td><strong>372</strong></td><td><strong>305</strong></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td><strong>All Phases</strong></td>
+            <td><strong>293</strong></td><td><strong>140</strong></td><td><strong>433</strong></td>
+            <td><strong>646</strong></td><td><strong>965</strong></td><td><strong>806</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ TEAM SIZING ═══════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Team-Size Based Calendar Estimates</div>
+
+    <div class="callout callout-info">
+      Calendar time = combined person-days ÷ (team-size × parallelism efficiency × 22 working days/month).
+      Parallelism efficiency: 0.75 for a 2-person team (high serialization dependency), 0.70 for larger teams
+      (coordination overhead). Includes a 20 % buffer for review cycles and unplanned work.
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:16px">
+      <table>
+        <thead>
+          <tr>
+            <th>Team Configuration</th>
+            <th>Phase 1</th>
+            <th>Phase 2</th>
+            <th>Phase 3</th>
+            <th>Total calendar time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Solo fullstack developer</strong><br><small style="color:#64748b">1 person doing everything</small></td>
+            <td>14 – 19 months</td>
+            <td>10 – 15 months</td>
+            <td>13 – 21 months</td>
+            <td><strong>37 – 55 months</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Small team</strong><br><small style="color:#64748b">1 BE + 1 FE engineer</small></td>
+            <td>8 – 11 months</td>
+            <td>6 – 9 months</td>
+            <td>8 – 12 months</td>
+            <td><strong>22 – 32 months</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Core team</strong><br><small style="color:#64748b">2 BE + 1 FE + 0.5 DevOps</small></td>
+            <td>5 – 7 months</td>
+            <td>4 – 6 months</td>
+            <td>5 – 8 months</td>
+            <td><strong>14 – 21 months</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Full team (recommended)</strong><br><small style="color:#64748b">3 BE + 2 FE + 1 DevOps/Infra + 1 QA</small></td>
+            <td>3 – 5 months</td>
+            <td>3 – 4 months</td>
+            <td>3 – 5 months</td>
+            <td><strong>9 – 14 months</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-note" style="margin-top:12px">
+      <strong>Note on Phase sequencing:</strong> Phases 1 → 2 → 3 are mostly sequential (each phase builds on the prior).
+      Within each phase, backend API tasks should start 2–4 weeks before the corresponding frontend tasks,
+      as MSW mocks enable frontend development in parallel once the OpenAPI contract is drafted.
+    </div>
+  </div>
+
+  <!-- ══ RELATIVE EFFORT BAR CHART ════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Relative Effort by Work-stream (Mid-point)</div>
+    <div class="card">
+      <p style="color:#64748b;font-size:12px;margin-bottom:16px">Bar width proportional to mid-point person-days. Scale: 1 unit = 5 days.</p>
+      <div class="timeline">
+
+        <div class="tl-row">
+          <div class="tl-label">P1 · Backend</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar bar-p1-api" style="width:calc(165px * (165/165))">165 days</div>
+            <span class="tl-note">Foundation + 15 modules + pipeline + tests</span>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-label">P1 · Frontend</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar bar-p1-ui" style="width:calc(165px * (120/165))">120 days</div>
+            <span class="tl-note">10-module UI + MSW + Playwright</span>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-label">P2 · Backend</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar bar-p2-api" style="width:calc(165px * (148/165))">148 days</div>
+            <span class="tl-note">LangGraph RAG, translation pipeline, GDPR</span>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-label">P2 · Frontend</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar bar-p2-ui" style="width:calc(165px * (69/165))">69 days</div>
+            <span class="tl-note">AI panels, locale routing, knowledge articles</span>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-label">P3 · Backend</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar bar-p3-api" style="width:calc(165px * (165/165))">192 days</div>
+            <span class="tl-note">LiveKit + Neo4j + messaging + microservices</span>
+          </div>
+        </div>
+
+        <div class="tl-row">
+          <div class="tl-label">P3 · Frontend</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar bar-p3-ui" style="width:calc(165px * (113/165))">113 days</div>
+            <span class="tl-note">LiveKit room, graph explorer, React Native</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RISK FACTORS ══════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Key Estimation Risk Factors</div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Risk</th>
+            <th>Phase(s)</th>
+            <th>Likelihood</th>
+            <th>Impact</th>
+            <th>Mitigation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>LangGraph RAG performance</strong> — p95 ≤ 2,500 ms budget with 9-node pipeline and live translation</td>
+            <td><span class="badge badge-p2">P2</span></td>
+            <td class="risk-high">High</td>
+            <td class="risk-high">+15–25 days</td>
+            <td>Prototype BACKTRANS node first; accept cached-only warm-path initially</td>
+          </tr>
+          <tr>
+            <td><strong>OpenSearch hybrid search tuning</strong> — BM25 + kNN RRF weights require iterative calibration</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td class="risk-medium">Medium</td>
+            <td class="risk-medium">+5–10 days</td>
+            <td>Use seeded fixture dataset; define recall@10 baseline before tuning</td>
+          </tr>
+          <tr>
+            <td><strong>Neo4j entity extraction accuracy</strong> — SpaCy/LLM NER quality on legal text may require fine-tuning</td>
+            <td><span class="badge badge-p3">P3</span></td>
+            <td class="risk-high">High</td>
+            <td class="risk-high">+10–20 days</td>
+            <td>Scope Phase 3 extraction to rule-based patterns first; ML fine-tune is a follow-on</td>
+          </tr>
+          <tr>
+            <td><strong>React Native mobile app</strong> — Expo + FCM/APNS store submission involves external review latency</td>
+            <td><span class="badge badge-p3">P3</span></td>
+            <td class="risk-medium">Medium</td>
+            <td class="risk-medium">+8–15 days</td>
+            <td>Submit TestFlight / Play Internal Track early; development proceeds in parallel</td>
+          </tr>
+          <tr>
+            <td><strong>Microservices extraction</strong> — service boundary cut with shared DB + Redis introduces deployment risk</td>
+            <td><span class="badge badge-p3">P3</span></td>
+            <td class="risk-medium">Medium</td>
+            <td class="risk-high">+10–20 days</td>
+            <td>Keep monolith flag in place; canary route 5 % of traffic first</td>
+          </tr>
+          <tr>
+            <td><strong>LiveKit self-hosted setup</strong> — egress recording to S3 + webhook signature requires infrastructure time</td>
+            <td><span class="badge badge-p3">P3</span></td>
+            <td class="risk-medium">Medium</td>
+            <td class="risk-medium">+4–8 days</td>
+            <td>Use LiveKit Cloud for Phase 3 GA; self-host only if data-residency is mandated</td>
+          </tr>
+          <tr>
+            <td><strong>Locale-prefix route change in Phase 2</strong> — Adding /en /es /fr prefixes touches auth middleware, deep links, and all Playwright tests</td>
+            <td><span class="badge badge-p2">P2</span></td>
+            <td class="risk-medium">Medium</td>
+            <td class="risk-medium">+4–7 days</td>
+            <td>Plan URL strategy in Phase 1; use next-intl from day one even if only EN is active</td>
+          </tr>
+          <tr>
+            <td><strong>Outbox poller concurrency</strong> — double-dispatch under concurrent pollers requires careful locking</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td class="risk-low">Low</td>
+            <td class="risk-medium">+2–4 days</td>
+            <td><code>SELECT … FOR UPDATE SKIP LOCKED</code> is standard pattern; test early with two pollers</td>
+          </tr>
+          <tr>
+            <td><strong>Moderation SLA compliance</strong> — 48-hour SLA requires alert + escalation wiring that goes beyond the checklist</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td class="risk-low">Low</td>
+            <td class="risk-low">+1–3 days</td>
+            <td>SLO alert in T-L6.8 covers detection; UI SLA countdown is a Phase 1 stretch</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ ASSUMPTIONS ═══════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Assumptions &amp; Constraints</div>
+    <div class="card">
+      <div class="section-subtitle" style="margin-top:0">Included in estimates</div>
+      <ul style="padding-left:20px; font-size:13px; color:#334155; line-height:2;">
+        <li>Developer self-testing, unit + integration test authorship, and code review time (~25 % of implementation time)</li>
+        <li>Sprint ceremonies and stand-ups (~10 % overhead, already embedded in daily rates)</li>
+        <li>Docker Compose local dev environment setup and CI/CD pipeline configuration</li>
+        <li>Basic AWS infrastructure provisioning (RDS, ElastiCache, OpenSearch Service, S3, ECS/EKS task definitions) where referenced in checklists</li>
+        <li>MSW handler authorship for all Phase 1 endpoints (the largest single frontend investment)</li>
+      </ul>
+
+      <div class="section-subtitle">NOT included in estimates</div>
+      <ul style="padding-left:20px; font-size:13px; color:#334155; line-height:2;">
+        <li>UX/Product design and wire-framing</li>
+        <li>Manual QA regression cycles and UAT facilitation with stakeholders</li>
+        <li>Legal/compliance review and sign-off turnaround time</li>
+        <li>Third-party API onboarding delays (OpenAI, LiveKit, AWS Translate, FCM/APNS certificates)</li>
+        <li>Project management, scrum-master, and business analysis time</li>
+        <li>Data migration from any existing legacy system</li>
+        <li>Load-testing infrastructure provisioning beyond what is defined in the checklists</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══ CRITICAL PATH ═════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">Critical Path Highlights</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Deliverable</th>
+            <th>Phase</th>
+            <th>Gate / Blocker for</th>
+            <th>Recommended start</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Database migrations + PgBouncer (T-D3.1 – 3.7)</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td>All backend service layers</td>
+            <td>Sprint 1 — Week 1</td>
+          </tr>
+          <tr>
+            <td>OpenSearch index templates + setup script (T-D3.8)</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td>Search &amp; embedding pipeline</td>
+            <td>Sprint 1 — Week 1</td>
+          </tr>
+          <tr>
+            <td>Transactional outbox poller + dispatcher (T-I4.5)</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td>All async jobs; search indexing; notifications</td>
+            <td>Sprint 2</td>
+          </tr>
+          <tr>
+            <td>Typed API client + MSW handlers (T0.4 + T0.5 UI)</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td>All frontend modules</td>
+            <td>Sprint 2 (parallel with backend auth)</td>
+          </tr>
+          <tr>
+            <td>Document ingestion → chunking → embedding chain (T-I4.7 – 4.12)</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td>Search relevance; Phase 2 RAG</td>
+            <td>Sprint 3</td>
+          </tr>
+          <tr>
+            <td>OpenAI embedding integration (T-I4.9)</td>
+            <td><span class="badge badge-p1">P1</span></td>
+            <td>Phase 2 AI Ask; knowledge graph entity vectors</td>
+            <td>Sprint 3</td>
+          </tr>
+          <tr>
+            <td>Translation provider abstraction + circuit breaker (P2 T-I4.1)</td>
+            <td><span class="badge badge-p2">P2</span></td>
+            <td>All ?lang= content endpoints; LangGraph BACKTRANS node</td>
+            <td>Phase 2 Sprint 1</td>
+          </tr>
+          <tr>
+            <td>LangGraph pipeline skeleton (intent → retrieve → merge → score → generate)</td>
+            <td><span class="badge badge-p2">P2</span></td>
+            <td>/ai/ask SLA; confidence scoring; moderation escalation</td>
+            <td>Phase 2 Sprint 2 — must be first P2 AI task</td>
+          </tr>
+          <tr>
+            <td>Neo4j provisioning + entity schema (P3 T-D3.7)</td>
+            <td><span class="badge badge-p3">P3</span></td>
+            <td>Entity extraction pipeline; knowledge graph API</td>
+            <td>Phase 3 Sprint 1</td>
+          </tr>
+          <tr>
+            <td>LiveKit server deployment + webhook receiver (P3 T-I4.1 + T-B17.4)</td>
+            <td><span class="badge badge-p3">P3</span></td>
+            <td>Session rooms; recording pipeline; session_event_job</td>
+            <td>Phase 3 Sprint 1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 3-MONTH IMPLEMENTATION PLAN ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-title">3-Month Implementation Plan — Phase 1 (MVP)</div>
+
+    <div class="callout callout-info">
+      <strong>Window:</strong> 12 weeks · 60 working days (20 working days/month).<br />
+      <strong>Scope target:</strong> Phase 1 (MVP) end-to-end — backend API, frontend, hybrid search, embedding pipeline, moderation queue, MSW demo mode, UAT-ready build.<br />
+      <strong>Why only Phase 1:</strong> Phase 1 mid-point alone is 285 person-days; Phases 2 &amp; 3 each require their own 3-month windows with the same team and are sequenced after MVP UAT sign-off (see Phased Roadmap below).
+    </div>
+
+    <div class="section-subtitle">Proposed Team (Phase 1)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Count</th>
+            <th>Allocation</th>
+            <th>Capacity (60 days × people)</th>
+            <th>Primary Responsibility</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Backend Engineer (Senior)</strong> <span class="tag tag-be">BE</span></td><td>4</td><td>100%</td><td>240 person-days</td><td>FastAPI services, repositories, outbox, pipeline, search, moderation</td></tr>
+          <tr><td><strong>Frontend Engineer (Senior)</strong> <span class="tag tag-fe">FE</span></td><td>3</td><td>100%</td><td>180 person-days</td><td>Next.js modules, typed API client, MSW, MUI/Tailwind, Playwright</td></tr>
+          <tr><td><strong>DevOps / Infra</strong> <span class="tag tag-infra">Infra</span></td><td>1</td><td>100%</td><td>60 person-days</td><td>AWS provisioning, CI/CD, OpenSearch, PgBouncer, Celery/KEDA, observability</td></tr>
+          <tr><td><strong>QA Engineer</strong></td><td>1</td><td>100%</td><td>60 person-days</td><td>Test plans, contract &amp; integration tests, Playwright E2E, UAT facilitation</td></tr>
+          <tr><td><strong>Tech Lead / Architect</strong></td><td>1</td><td>50%</td><td>30 person-days</td><td>Design reviews, ADRs, cross-module integration, unblockers</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><strong>Total team capacity</strong></td><td><strong>9.5 FTE</strong></td><td></td><td><strong>570 person-days</strong></td><td>Effective ≈ 400 days after 70 % parallelism &amp; 20 % buffer — covers Phase 1 mid-point (285 d) with margin for risk</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- ── Gantt chart ───────────────────────────────────────────────────────── -->
+    <div class="section-subtitle">Module-wise Gantt — 12-Week Schedule</div>
+
+    <style>
+      .gantt-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 16px; margin-bottom: 24px; }
+      .gantt {
+        display: grid;
+        grid-template-columns: 220px repeat(12, 1fr);
+        gap: 2px;
+        min-width: 920px;
+        font-size: 11px;
+      }
+      .g-head {
+        background: #1e3a5f; color: #fff; font-weight: 700;
+        text-align: center; padding: 6px 4px; border-radius: 4px;
+      }
+      .g-row-label {
+        background: #f1f5f9; color: #1e293b; font-weight: 600;
+        padding: 6px 10px; border-radius: 4px; display: flex; align-items: center;
+      }
+      .g-row-label.lane-be { border-left: 3px solid #1a6fa8; }
+      .g-row-label.lane-fe { border-left: 3px solid #2563eb; }
+      .g-row-label.lane-infra { border-left: 3px solid #d97706; }
+      .g-row-label.lane-qa { border-left: 3px solid #e11d48; }
+      .g-cell {
+        background: #f8fafc; min-height: 26px; border-radius: 3px;
+      }
+      .g-bar {
+        color: #fff; font-weight: 700; padding: 6px 8px;
+        border-radius: 3px; text-align: left; min-height: 26px;
+        display: flex; align-items: center; white-space: nowrap; overflow: hidden;
+      }
+      .bar-be   { background: #1a6fa8; }
+      .bar-fe   { background: #2563eb; }
+      .bar-pipe { background: #0891b2; }
+      .bar-mod  { background: #be185d; }
+      .bar-srch { background: #7c3aed; }
+      .bar-infra{ background: #d97706; }
+      .bar-qa   { background: #e11d48; }
+      .bar-hard { background: #475569; }
+      .milestone {
+        position: relative; background: #fef3c7; color: #92400e;
+        font-weight: 700; text-align: center; padding: 6px 4px;
+        border-radius: 3px; font-size: 10px;
+      }
+      .gantt-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12px; color: #475569; }
+      .gantt-legend span.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+    </style>
+
+    <div class="gantt-wrap">
+      <div class="gantt">
+        <!-- Header row -->
+        <div class="g-head" style="background:#0f172a">Module / Workstream</div>
+        <div class="g-head">W1</div><div class="g-head">W2</div><div class="g-head">W3</div>
+        <div class="g-head">W4</div><div class="g-head">W5</div><div class="g-head">W6</div>
+        <div class="g-head">W7</div><div class="g-head">W8</div><div class="g-head">W9</div>
+        <div class="g-head">W10</div><div class="g-head">W11</div><div class="g-head">W12</div>
+
+        <!-- ── INFRA / DEVOPS ── -->
+        <div class="g-row-label lane-infra">Infra · AWS, CI/CD, Compose</div>
+        <div class="g-bar bar-infra" style="grid-column: span 3;">AWS, ECS, RDS, OpenSearch, S3, Compose</div>
+        <div class="g-bar bar-infra" style="grid-column: span 3;">PgBouncer · KEDA · OTel · Sentry</div>
+        <div class="g-cell" style="grid-column: span 4;"></div>
+        <div class="g-bar bar-infra" style="grid-column: span 2;">DR drill · prod cutover</div>
+
+        <!-- ── BACKEND ── -->
+        <div class="g-row-label lane-be">BE · M0 Foundation + DB</div>
+        <div class="g-bar bar-be" style="grid-column: span 2;">FastAPI skeleton · Alembic · roles · seeds · OS templates</div>
+        <div class="g-cell" style="grid-column: span 10;"></div>
+
+        <div class="g-row-label lane-be">BE · M1–M4 Auth / Users / Orgs / Invites</div>
+        <div class="g-cell" style="grid-column: span 2;"></div>
+        <div class="g-bar bar-be" style="grid-column: span 2;">JWT RS256 · invite · profile · org/invite CRUD</div>
+        <div class="g-cell" style="grid-column: span 8;"></div>
+
+        <div class="g-row-label lane-be">BE · Outbox + Integration Core</div>
+        <div class="g-cell" style="grid-column: span 2;"></div>
+        <div class="g-bar bar-pipe" style="grid-column: span 3;">Outbox poller · dispatcher · entity cache · Celery</div>
+        <div class="g-cell" style="grid-column: span 7;"></div>
+
+        <div class="g-row-label lane-be">BE · M5 Repository + Pipeline</div>
+        <div class="g-cell" style="grid-column: span 4;"></div>
+        <div class="g-bar bar-be" style="grid-column: span 2;">Upload · CRUD · versions · signed URL</div>
+        <div class="g-bar bar-pipe" style="grid-column: span 2;">OCR · chunking · embedding chain</div>
+        <div class="g-cell" style="grid-column: span 4;"></div>
+
+        <div class="g-row-label lane-be">BE · M6 Q&amp;A + M7 News</div>
+        <div class="g-cell" style="grid-column: span 4;"></div>
+        <div class="g-bar bar-be" style="grid-column: span 3;">Questions · answers · accept · news CRUD + versions</div>
+        <div class="g-cell" style="grid-column: span 5;"></div>
+
+        <div class="g-row-label lane-be">BE · M8 Feed + M11 Search</div>
+        <div class="g-cell" style="grid-column: span 6;"></div>
+        <div class="g-bar bar-srch" style="grid-column: span 2;">Cursor feed · hybrid BM25+kNN · RRF · cache</div>
+        <div class="g-cell" style="grid-column: span 4;"></div>
+
+        <div class="g-row-label lane-be">BE · M9 Moderation + M10 Notifications</div>
+        <div class="g-cell" style="grid-column: span 7;"></div>
+        <div class="g-bar bar-mod" style="grid-column: span 3;">Unified queue · 5 actions · retract · notification dispatch</div>
+        <div class="g-cell" style="grid-column: span 2;"></div>
+
+        <div class="g-row-label lane-be">BE · M12–M15 Dashboard / Taxonomy / Admin / Health</div>
+        <div class="g-cell" style="grid-column: span 8;"></div>
+        <div class="g-bar bar-be" style="grid-column: span 2;">Dashboard · tags · admin stats · health · Prom</div>
+        <div class="g-cell" style="grid-column: span 2;"></div>
+
+        <div class="g-row-label lane-be">BE · Security / Audit / Hardening</div>
+        <div class="g-cell" style="grid-column: span 9;"></div>
+        <div class="g-bar bar-hard" style="grid-column: span 3;">Rate-limit · WAF · audit trail · SLO alerts · load test</div>
+
+        <!-- ── FRONTEND ── -->
+        <div class="g-row-label lane-fe">FE · M0 Foundation (API client + MSW + layout)</div>
+        <div class="g-bar bar-fe" style="grid-column: span 3;">Bootstrap · MUI+Tailwind · typed client · MSW · layout · guards</div>
+        <div class="g-cell" style="grid-column: span 9;"></div>
+
+        <div class="g-row-label lane-fe">FE · M1 Auth + M2 Users</div>
+        <div class="g-cell" style="grid-column: span 3;"></div>
+        <div class="g-bar bar-fe" style="grid-column: span 2;">Login · invite · reset · users table · profile</div>
+        <div class="g-cell" style="grid-column: span 7;"></div>
+
+        <div class="g-row-label lane-fe">FE · M3 Orgs + M4 Invites + M5 Repository</div>
+        <div class="g-cell" style="grid-column: span 5;"></div>
+        <div class="g-bar bar-fe" style="grid-column: span 2;">Org admin · invite mgmt · repo list + PDF preview + upload</div>
+        <div class="g-cell" style="grid-column: span 5;"></div>
+
+        <div class="g-row-label lane-fe">FE · M6 Q&amp;A + M7 News + M8 Feed</div>
+        <div class="g-cell" style="grid-column: span 6;"></div>
+        <div class="g-bar bar-fe" style="grid-column: span 3;">Q&amp;A composer · news views · infinite feed · likes</div>
+        <div class="g-cell" style="grid-column: span 3;"></div>
+
+        <div class="g-row-label lane-fe">FE · M9 Moderation + M10 Notifications + M11 Search</div>
+        <div class="g-cell" style="grid-column: span 8;"></div>
+        <div class="g-bar bar-fe" style="grid-column: span 2;">Unified queue · history · bell · global search</div>
+        <div class="g-cell" style="grid-column: span 2;"></div>
+
+        <div class="g-row-label lane-fe">FE · M12–M15 Dashboard / Taxonomy / Admin / Cross-cutting</div>
+        <div class="g-cell" style="grid-column: span 9;"></div>
+        <div class="g-bar bar-fe" style="grid-column: span 3;">Dashboard · taxonomy tree · admin · a11y · Playwright</div>
+
+        <!-- ── QA ── -->
+        <div class="g-row-label lane-qa">QA · Test plans &amp; contracts</div>
+        <div class="g-cell" style="grid-column: span 2;"></div>
+        <div class="g-bar bar-qa" style="grid-column: span 4;">Contract tests · integration harness · seed data</div>
+        <div class="g-cell" style="grid-column: span 6;"></div>
+
+        <div class="g-row-label lane-qa">QA · E2E + UAT</div>
+        <div class="g-cell" style="grid-column: span 7;"></div>
+        <div class="g-bar bar-qa" style="grid-column: span 5;">Playwright E2E · regression · load · UAT</div>
+
+        <!-- ── Milestones ── -->
+        <div class="g-row-label" style="background:#fffbeb; border-left:3px solid #d97706;">Milestones</div>
+        <div class="milestone" style="grid-column: span 2;">M1 · Foundation ready</div>
+        <div class="milestone" style="grid-column: span 2;">M2 · Auth alpha</div>
+        <div class="milestone" style="grid-column: span 2;">M3 · Repo + pipeline</div>
+        <div class="milestone" style="grid-column: span 2;">M4 · Search live</div>
+        <div class="milestone" style="grid-column: span 2;">M5 · Moderation ready</div>
+        <div class="milestone" style="grid-column: span 2;">M6 · UAT &amp; Go-Live</div>
+      </div>
+
+      <div class="gantt-legend">
+        <div><span class="sw" style="background:#1a6fa8"></span>Backend module</div>
+        <div><span class="sw" style="background:#0891b2"></span>Pipeline / outbox</div>
+        <div><span class="sw" style="background:#7c3aed"></span>Search</div>
+        <div><span class="sw" style="background:#be185d"></span>Moderation</div>
+        <div><span class="sw" style="background:#2563eb"></span>Frontend module</div>
+        <div><span class="sw" style="background:#d97706"></span>Infra / DevOps</div>
+        <div><span class="sw" style="background:#e11d48"></span>QA</div>
+        <div><span class="sw" style="background:#475569"></span>Hardening</div>
+      </div>
+    </div>
+
+    <!-- ── Resource load by week ─────────────────────────────────────────────── -->
+    <div class="section-subtitle">Weekly Resource Load (FTE allocation)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Sprint / Weeks</th>
+            <th>Theme</th>
+            <th>BE <span class="tag tag-be">FTE</span></th>
+            <th>FE <span class="tag tag-fe">FTE</span></th>
+            <th>Infra <span class="tag tag-infra">FTE</span></th>
+            <th>QA</th>
+            <th>Lead</th>
+            <th>Exit Gate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Sprint 1 · W1–W2</strong></td>
+            <td>Foundation — FastAPI skeleton, DB migrations, OpenSearch templates, FE bootstrap, MSW, AWS provisioning</td>
+            <td>4.0</td><td>3.0</td><td>1.0</td><td>0.3</td><td>0.5</td>
+            <td><strong>M1:</strong> Hello-world API + FE shell + CI green</td>
+          </tr>
+          <tr>
+            <td><strong>Sprint 2 · W3–W4</strong></td>
+            <td>Auth / Users / Orgs / Invites · Outbox poller · FE auth screens · Contract tests</td>
+            <td>4.0</td><td>3.0</td><td>1.0</td><td>1.0</td><td>0.5</td>
+            <td><strong>M2:</strong> End-to-end login + invite signup in staging</td>
+          </tr>
+          <tr>
+            <td><strong>Sprint 3 · W5–W6</strong></td>
+            <td>Repository + Q&amp;A + News (BE) · OCR/chunking/embedding pipeline · FE: Orgs, Invites, Repo, PDF preview</td>
+            <td>4.0</td><td>3.0</td><td>1.0</td><td>1.0</td><td>0.5</td>
+            <td><strong>M3:</strong> Document upload → indexed → retrievable</td>
+          </tr>
+          <tr>
+            <td><strong>Sprint 4 · W7–W8</strong></td>
+            <td>Feed + Hybrid Search (BM25+kNN) · FE: Q&amp;A composer, News, Feed · E2E test harness scales up</td>
+            <td>4.0</td><td>3.0</td><td>0.5</td><td>1.0</td><td>0.5</td>
+            <td><strong>M4:</strong> Hybrid search live; p95 &lt; 800 ms on seeded dataset</td>
+          </tr>
+          <tr>
+            <td><strong>Sprint 5 · W9–W10</strong></td>
+            <td>Moderation queue + Notifications + Dashboard + Taxonomy · FE: Moderation, Bell, Search · Playwright suite</td>
+            <td>4.0</td><td>3.0</td><td>0.5</td><td>1.0</td><td>0.5</td>
+            <td><strong>M5:</strong> Moderation workflow demo; UGC pending → approved path</td>
+          </tr>
+          <tr>
+            <td><strong>Sprint 6 · W11–W12</strong></td>
+            <td>Admin + Health + Security/Audit hardening · FE: Admin, Taxonomy, a11y · Load test · DR drill · UAT</td>
+            <td>4.0</td><td>3.0</td><td>1.0</td><td>1.0</td><td>0.5</td>
+            <td><strong>M6:</strong> UAT sign-off · prod cutover ready</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"><strong>Average load across 12 weeks</strong></td>
+            <td><strong>4.0</strong></td><td><strong>3.0</strong></td><td><strong>0.83</strong></td><td><strong>0.88</strong></td><td><strong>0.5</strong></td>
+            <td><strong>9.2 avg FTE · 553 effective person-days</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- ── Phased Roadmap beyond month 3 ─────────────────────────────────────── -->
+    <div class="section-subtitle">Phased Roadmap Beyond Month 3</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Window</th>
+            <th>Scope</th>
+            <th>Team (delta)</th>
+            <th>Exit gate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Months 1–3</strong> <span class="badge badge-p1">P1 MVP</span></td>
+            <td>Phase 1 full delivery — 15 BE modules, 15 FE modules, hybrid search, moderation, UAT</td>
+            <td>4 BE · 3 FE · 1 Infra · 1 QA · 0.5 Lead</td>
+            <td>MVP UAT sign-off · production cutover</td>
+          </tr>
+          <tr>
+            <td><strong>Months 4–6</strong> <span class="badge badge-p2">P2 AI + i18n</span></td>
+            <td>LangGraph RAG · translation pipeline · EN/ES/FR · knowledge articles · GDPR export</td>
+            <td>+1 AI/ML Engineer · same FE count · 0.5 Infra</td>
+            <td>/ai/ask GA · ES/FR shipped</td>
+          </tr>
+          <tr>
+            <td><strong>Months 7–10</strong> <span class="badge badge-p3">P3 Live + Graph + Mobile</span></td>
+            <td>LiveKit sessions · Neo4j graph · messaging · push · React Native · microservices extraction</td>
+            <td>+1 Mobile Engineer · +1 Data/Graph Engineer</td>
+            <td>Mobile store submission · graph explorer GA</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <strong>Assumptions baked into the 3-month plan:</strong>
+      (1) UX designs are delivered <em>before</em> the relevant sprint starts — no design wait time on the critical path.
+      (2) OpenAI / AWS accounts, OpenSearch domain, and CI runners are provisioned by end of Sprint 1.
+      (3) Backend OpenAPI contract for each module is published before the matching FE sprint starts so MSW handlers can stub it.
+      (4) Senior engineers throughout; mid-level resources add ~30 % overhead and would push the plan to ~16 weeks at the same team size.
+      (5) No scope creep into Phase 2 features (AI Ask, translation, knowledge articles) — these are explicitly deferred to Months 4–6.
+    </div>
+  </div>
+
+  <!-- ══ FOOTER ════════════════════════════════════════════════════════════════════ -->
+  <hr class="divider" />
+  <div style="font-size:12px; color:#94a3b8; text-align:center;">
+    Generated 18 May 2026 &mdash; ICA Platform effort estimation &mdash; Based on Phase 1, 2 &amp; 3 API + UI task checklists &mdash;
+    Total tasks surveyed: 433 (293 backend / 140 frontend)
+  </div>
+
+</div>
+</body>
+</html>

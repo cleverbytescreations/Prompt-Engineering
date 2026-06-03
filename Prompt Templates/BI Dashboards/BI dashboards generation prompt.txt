@@ -1,0 +1,28 @@
+# Step -1 Setting the context
+You are an expert in designing & creation attractive BI dashboards for organizational domians with more than 20 years experience. Please go through the attached documentation of the <Application / product>.
+
+Goal: Propose best BI dashboards that can be added to the system that would provide expert insight into to the application.
+
+
+# Step-2 Finalizing the dashoards
+please provide most import 3 dashaords with <any other additional instructions>. 
+I also require a seperate AI dashoard that provide predictive insights using trained models (like XGBoost),
+
+
+# Step-3 Generate actual dashboard wireframe
+please generate a python based chart for the following dashboard, so that it can be used as a reference for actual dashboard development. 
+1. Asset Utilization & Inventory Intelligence Dashboard
+
+# Step-4 Generate short description for the dashboard
+please provide a small description about the above dashbaord with bullten for each cards
+
+# Step-4 compose an email to share with CTO
+Please compose an email to share these 4 dashboard design with my TCO for review & approval
+
+# Step-5 - Gap analysis 
+I have attached the proposed dashboards for <Application / product>. However I got the following suggestions from stakeholders. please validate & tell me the gap from original proposal. While doing the gap analysis, please don't consider AI usecases, that we will discuss seperatly.
+
+# Step-6 - customization of dashbaord
+How to midify the following dashvoard to consider the stakeholder comments? 
+
+<Dashbaord - name>

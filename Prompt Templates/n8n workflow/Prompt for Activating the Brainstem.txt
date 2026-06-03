@@ -1,0 +1,36 @@
+Activating the Brainstem - Generating Your System Prompt
+=======================
+Ref: https://youtu.be/GchXMRwuWxE?si=rjyckKfytiM1KWbW
+
+Writing system prompts can be daunting, but here's a powerful shortcut:
+
+1. Take a screenshot of your n8n workflow
+2. Download the workflow as a JSON file (click the three dots menu > Download)
+3. Head to ChatGPT with the latest reasoning model
+4. Upload both files and ask it to generate a comprehensive system prompt for your subscription tracking agent
+
+#############################################################
+
+Prompt to Generate System Prompt
+
+## TASK ##
+
+Your task is to output a clear, precise, and comprehensive system message for my n8n AI agent designed to keep track of my subscriptions (i.e. recurring expenses).
+
+## CONTEXT ##
+
+The AI Agent is connected to a Google Sheet and has access to the "AddEntry" tool.
+
+When the user sends a message like "I just subscribed to ChatGPT for 20 usd a month" the AI agent should first confirm its understanding then fill out the columns in the Google Sheet.
+
+For example:
+
+Expense = ChatGPT
+Charge Date = By default use today’s date (date chat was sent) unless stated otherwise
+Cadence = Monthly
+Cost = $20
+Status = Active
+
+I've attached a .json file and screenshot for you to reference.
+
+##################################################################

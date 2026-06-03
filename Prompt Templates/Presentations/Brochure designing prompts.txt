@@ -1,0 +1,53 @@
+
+## Step 1 - cerate feature list
+
+Files to refer:
+---------------
+1. Docs\RAG-API-architecture.md
+2. Docs\RAG-WEB-system-architecture.md
+
+please generate detailed feature list of the RAG absed BI dashboard application that provide insights into the feature list. Generated document should be saved under "Docs\RAG-feature-list.md"
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Step 2 - create the broucher
+Files to refer:
+---------------
+1. Docs\RAG-feature-list.md
+2. Docs\CogniQuery_RAG_BI_Dashboard_Sales_Deck.pptx
+
+please generate one pager broucher in html format by following the sample template (style) document - "docunexus-one-pager.html". Generated html file should be saved under "Docs\CogniQuery-one-pager.html". It should provide quick overview of the "CogniQuery RAG based BI dashboard" application with similar look and feel of the attached template & cover the features from the resouces mentioned above
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Step 3 - create the feeaback contents
+
+I have shared the presentation about the RAG based dashbaord application with my CTO. Presenation details are attached along with feature list. Here is the feedaback I got from CTO. Please suggest the required changes in the following resources: 
+
+1. CogniQuery-one-pager.html 
+2. CogniQuery-Brochure.html 
+3. CogniQuery_RAG_BI_Dashboard_Sales_Deck.pptx
+
+##############################################
+
+<Email content>
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+## Step 4 - modify the content 
+
+Files to refer:
+1. Docs\CogniQuery-review-feedback.md
+2. Docs\CogniQuery-one-pager.html
+3. Docs\RAG-feature-list.md
+
+Special instructions:
+----------------------
+1. Layout and look & feel should be retained from original version of the modified document. 
+2. Pagelayout should be retained from original version of the modified document so that the print will not overlap with next page.
+
+Please use the feedback analysis (CogniQuery-review-feedback.md) and modify "CogniQuery-one-pager.html" to make necessary changes so that overall change should address the following concern from my CTO:
+
+########################################
+
+<Email content>

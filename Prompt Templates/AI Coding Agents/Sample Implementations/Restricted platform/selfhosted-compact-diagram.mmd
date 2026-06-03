@@ -1,0 +1,73 @@
+flowchart TB
+    subgraph Actors
+        M[Member / User]
+        MOD[Moderator]
+        ADM[Admin / ICA Legal Office]
+    end
+
+    subgraph Edge["Edge / Ingress"]
+        NGINX["nginx<br/>TLS termination · reverse proxy<br/>1 replica · 2 vCPU / 0.5 GB"]
+    end
+
+    subgraph AppNode["prod-app-01 — App + Workers (24 vCPU / 48 GB / 500 GB NVMe)"]
+        FE["frontend (Next.js)<br/>2 replicas · 1 vCPU / 1 GB"]
+        API["FastAPI Backend<br/>3 replicas · 2 vCPU / 2 GB"]
+        WDEF["celery-default<br/>2 replicas · 1 vCPU / 1 GB"]
+        WING["celery-ingestion<br/>1 replica · 4 vCPU / 4 GB"]
+        WEMB["celery-embeddings<br/>1 replica · 4 vCPU / 2 GB"]
+        WAI["celery-ai<br/>1 replica · 2 vCPU / 2 GB"]
+        WBEAT["celery-beat<br/>1 replica · 0.5 vCPU / 0.5 GB"]
+    end
+
+    subgraph DataNode["prod-data-01 — Data Services (16 vCPU / 64 GB / 2 TB NVMe + 4 TB SATA)"]
+        PGB["PgBouncer<br/>1 vCPU / 0.5 GB · pool_size=50"]
+        PG[("PostgreSQL 15<br/>6 vCPU / 20 GB · 500 GB NVMe<br/>shared_buffers=5GB")]
+        RBROKER[("redis-broker<br/>2 vCPU / 6 GB · 100 GB NVMe<br/>AOF · noeviction")]
+        RCACHE[("redis-cache<br/>2 vCPU / 12 GB<br/>allkeys-lru · maxmemory=10gb")]
+        OS[("OpenSearch (single-node)<br/>6 vCPU / 24 GB · 1 TB NVMe<br/>heap 12 GB · 1 shard / 0 replicas")]
+        MINIO[("MinIO (single-node)<br/>2 vCPU / 8 GB · 4 TB SATA<br/>daily mc mirror to off-host")]
+    end
+
+    subgraph External["External Services"]
+        SMTP["SMTP / SendGrid<br/>Email"]
+        LLM["OpenAI API<br/>LLM + Embeddings"]
+        DOCLING["Docling<br/>Document Parsing"]
+    end
+
+    subgraph Backup["Off-host Backup"]
+        BKP["Daily pg_basebackup<br/>+ MinIO mirror<br/>(RTO ≤ 4h · RPO ≤ 24h)"]
+    end
+
+    M --> NGINX
+    MOD --> NGINX
+    ADM --> NGINX
+
+    NGINX -- "/ static" --> FE
+    NGINX -- "/api/v1/* HTTPS + JWT" --> API
+
+    API -- "SQL via pool" --> PGB
+    PGB -- "TCP 5432" --> PG
+    API -- "Hybrid Search" --> OS
+    API -- "Cache Lookup" --> RCACHE
+    API -- "Pre-signed URL" --> MINIO
+    API -- "Enqueue Job" --> RBROKER
+
+    RBROKER -- "Consume" --> WDEF
+    RBROKER -- "Consume" --> WING
+    RBROKER -- "Consume" --> WEMB
+    RBROKER -- "Consume" --> WAI
+    WBEAT -- "Schedule" --> RBROKER
+
+    WDEF -- "Read/Write" --> PGB
+    WING -- "Read/Write" --> PGB
+    WING -- "Parse PDF" --> DOCLING
+    WING -- "Fetch/Store" --> MINIO
+    WEMB -- "Embed Text" --> LLM
+    WEMB -- "Index Vectors" --> OS
+    WAI -- "LLM Generation" --> LLM
+    WAI -- "Read" --> OS
+    WDEF -- "Invalidate Cache" --> RCACHE
+    WDEF -- "Send Email" --> SMTP
+
+    PG -. "nightly dump" .-> BKP
+    MINIO -. "mc mirror" .-> BKP

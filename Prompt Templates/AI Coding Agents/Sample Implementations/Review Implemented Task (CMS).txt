@@ -1,0 +1,47 @@
+
+>>> Review Implemented Task (CMS)
+
+Files to refer:
+---------------
+1. Docs/CMS_Implementation_Plan.md
+2. Docs/CMS_Implementation_Task_Checklist.md
+3. Docs/DDL-consultant-management-system.sql
+
+
+Task to review:
+---------------
+9.1 ORM Models
+9.2 Adapters
+9.3 Notification Service
+9.4 Celery Tasks
+9.5 Resilience
+9.6 API Endpoints & SSE
+
+
+Objective:
+----------
+Review the implemented task for correctness, completeness, and alignment with the implementation plan.
+
+Instructions:
+-------------
+1. Review the implementation against the selected task.
+2. Confirm whether the implementation satisfies the acceptance criteria.
+3. Check for code quality, security, validation, error handling, logging, and test coverage.
+4. Confirm whether the task was correctly marked as completed in the checklist.
+5. Provide a review report.
+
+following are the code change report:
+-------------------------------------
+
+====================================================================================
+
+please update the project audit document with the test coverage deails at the following location:
+
+Docs/audit/project-audit-document-p2 (test coverage).md
+
+
+================
+
+please consolidate the following task details so that I can mention that in the timesheet entry.
+I want it to be more simplified 3 line statement.
+

@@ -1,0 +1,89 @@
+flowchart TB
+    subgraph Actors
+        M[Member / User]
+        MOD[Moderator]
+        ADM[Admin / ICA Legal Office]
+    end
+
+    subgraph Edge["AWS Edge"]
+        CF["CloudFront<br/>CDN + TLS"]
+        ALB["Application Load Balancer<br/>ACM TLS"]
+    end
+
+    subgraph Frontend["Frontend Hosting"]
+        FE["Vercel or S3 + CloudFront<br/>Next.js Static Export"]
+    end
+
+    subgraph AppTier["Application Tier — ECS Fargate"]
+        API["FastAPI Backend<br/>2 tasks · 1 vCPU / 2 GB<br/>autoscale 2 to 4"]
+        PGB["PgBouncer Sidecar<br/>1 task · pool_size 20"]
+        WDEF["Celery default<br/>1 task · 1 vCPU / 1 GB"]
+        WING["Celery ingestion<br/>1 task · 2 vCPU / 2 GB"]
+        WEMB["Celery embeddings<br/>1 task · 2 vCPU / 1 GB"]
+        WAI["Celery ai<br/>1 task · 1 vCPU / 1 GB"]
+        WBEAT["Celery beat<br/>1 task · Redbeat"]
+    end
+
+    subgraph DataPlane["Data Plane — Managed AWS Services"]
+        RDS[("RDS PostgreSQL 15<br/>db.t3.medium · single-AZ<br/>100 GB gp3")]
+        OS[("Amazon OpenSearch<br/>t3.small.search · single node<br/>50 GB gp3")]
+        RBROKER[("ElastiCache Redis 7 — broker<br/>cache.t3.micro · single-AZ")]
+        RCACHE[("ElastiCache Redis 7 — cache<br/>cache.t3.small · allkeys-lru")]
+        S3[("S3<br/>Versioned · 7-day GDPR lifecycle")]
+    end
+
+    subgraph Platform["AWS Platform Services"]
+        ECR["ECR<br/>Container Registry"]
+        SM["Secrets Manager<br/>DB · JWT · OpenAI keys"]
+        CW["CloudWatch Logs<br/>30-day retention"]
+        SES["SES<br/>Transactional Email"]
+    end
+
+    subgraph External["External Services"]
+        LLM["OpenAI API<br/>LLM + Embeddings"]
+        DOCLING["Docling<br/>Document Parsing"]
+    end
+
+    M --> CF
+    MOD --> CF
+    ADM --> CF
+    CF -- "Static assets" --> FE
+    CF -- "/api/v1/*  HTTPS + JWT" --> ALB
+    ALB --> API
+
+    API -- "SQL via pooled conn" --> PGB
+    PGB -- "TCP 5432" --> RDS
+    API -- "Hybrid Search" --> OS
+    API -- "Cache Lookup" --> RCACHE
+    API -- "Pre-signed URL" --> S3
+    API -- "Enqueue Job" --> RBROKER
+
+    RBROKER -- "Consume" --> WDEF
+    RBROKER -- "Consume" --> WING
+    RBROKER -- "Consume" --> WEMB
+    RBROKER -- "Consume" --> WAI
+    WBEAT -- "Schedule" --> RBROKER
+
+    WDEF -- "Read/Write" --> RDS
+    WING -- "Read/Write" --> RDS
+    WING -- "Parse PDF" --> DOCLING
+    WING -- "Fetch/Store" --> S3
+    WEMB -- "Embed Text" --> LLM
+    WEMB -- "Index Vectors" --> OS
+    WAI -- "LLM Generation" --> LLM
+    WAI -- "Read" --> OS
+    WDEF -- "Invalidate Cache" --> RCACHE
+    WDEF -- "Send Email" --> SES
+
+    API -. "Pull image" .-> ECR
+    WDEF -. "Pull image" .-> ECR
+    WING -. "Pull image" .-> ECR
+    WEMB -. "Pull image" .-> ECR
+    WAI -. "Pull image" .-> ECR
+    API -. "Fetch secrets" .-> SM
+    WAI -. "Fetch secrets" .-> SM
+    API -. "stdout/stderr" .-> CW
+    WDEF -. "stdout/stderr" .-> CW
+    WING -. "stdout/stderr" .-> CW
+    WEMB -. "stdout/stderr" .-> CW
+    WAI -. "stdout/stderr" .-> CW

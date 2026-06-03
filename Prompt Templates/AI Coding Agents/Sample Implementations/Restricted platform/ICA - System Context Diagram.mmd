@@ -1,0 +1,43 @@
+flowchart TB
+    subgraph Actors
+        M[Member / User]
+        MOD[Moderator]
+        ADM[Admin / ICA Legal Office]
+    end
+
+    subgraph Platform["ICA Restricted Legal Platform"]
+        UI[Next.js Web UI\nPWA / App Router]
+        API[FastAPI Backend API\n/api/v1/*]
+        WORKERS[Celery Worker Fleet\nAsync Processing]
+    end
+
+    subgraph DataPlane["Data Plane"]
+        PG[(PostgreSQL\nSystem of Record)]
+        OS[(OpenSearch\nSearch + Vector Store)]
+        RBROKER[(redis-broker\nCelery Broker — Multi-AZ)]
+        RCACHE[(redis-cache\nSearch + Translation Cache)]
+        S3[(MinIO / AWS S3\nFile Storage)]
+    end
+
+    subgraph External["External Services"]
+        SMTP[SMTP / SendGrid\nEmail]
+        LLM[OpenAI API\nLLM + Embeddings]
+        DOCLING[Docling\nDocument Parsing]
+    end
+
+    M --> UI
+    MOD --> UI
+    ADM --> UI
+    UI -- HTTPS + JWT --> API
+    API -- Read/Write --> PG
+    API -- Hybrid Search --> OS
+    API -- Cache Lookup --> RCACHE
+    API -- Pre-signed URL --> S3
+    API -- Enqueue Job --> RBROKER
+    WORKERS -- Read/Write --> PG
+    WORKERS -- Index Content --> OS
+    WORKERS -- Invalidate Cache --> RCACHE
+    WORKERS -- Parse PDF --> DOCLING
+    WORKERS -- Embed Text --> LLM
+    WORKERS -- Send Email --> SMTP
+    WORKERS -- LLM Generation --> LLM
