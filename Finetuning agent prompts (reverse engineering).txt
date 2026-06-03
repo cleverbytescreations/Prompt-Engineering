@@ -1,0 +1,38 @@
+Finetuning agent prompts (reverse engineering)
+=============================================
+
+Claude prompt:
+Files to refer:
+1. Docs/connection-pooling-pgbouncer-asyncpg.md
+2. Docs/claude-agent-settings-prompt.txt
+
+By refering the instructions (connection-pooling-pgbouncer-asyncpg.md) about how to handle conenction pooling using pgbouncer and SQL Alchemy with follwowing recommendatoins, please modify the reverse enginerred prompt (claude-agent-settings-prompt.txt) for calude code so that it will generate approprite skills for create the root md file and backend skills to handle connection pooling properly. Explain me what you are going to modify in the reverse engineered prompt so that I can review and approve the change before modifying the file.
+
+Note: Please note that "Docs/connection-pooling-pgbouncer-asyncpg.md" is only for your reference to generate the reverse engineered prompt. During actual execution fo the reverse engineered prompt, there will not be the pooling document, instead there coulkd a system architecture or solution architecture document. So don't hard code any reference document in this reverse prompt, make it dynamic
+
+#################################################################
+
+Three skill/memory surfaces now carry the connection-pooling rule, in order of how aggressively each gets loaded:
+1. Key Rules — one line, always loaded into every session. This is the highest-leverage spot: any AI working in the repo sees it without invoking a skill. Points to the helper, names the real fix, flags the Alembic exception, links the doc.
+2. skills/backend-patterns/SKILL.md — the skill that the tool loads for backend work. Added a full "Database & Connection Pooling Rules" section right after the architecture rule.
+
+Each entry states the same four load-bearing facts so they survive in isolation: (1) prepared_statement_name_func is the actual fix, not statement_cache_size=0; (2) all three args go in connect_args, not top-level kwargs; (3) both web + worker engines, SQLite exempt; (4) Alembic bypasses PgBouncer.
+
+========================================================================================================================================
+
+Codex prompt:
+Files to refer:
+1. Docs/connection-pooling-pgbouncer-asyncpg.md
+2. Docs/codex-agent-settings-prompt.txt
+
+By refering the instructions (connection-pooling-pgbouncer-asyncpg.md) about how to handle conenction pooling using pgbouncer and SQL Alchemy with follwowing recommendatoins, please modify the reverse enginerred prompt (codex-agent-settings-prompt.txt) for codex so that it will generate approprite skills for create the root md file and backend skills to handle connection pooling properly. Explain me what you are going to modify in the reverse engineered prompt so that I can review and approve the change before modifying the file.
+
+Note: Please note that "Docs/connection-pooling-pgbouncer-asyncpg.md" is only for your reference to generate the reverse engineered prompt. During actual execution fo the reverse engineered prompt, there will not be the pooling document, instead there coulkd a system architecture or solution architecture document. So don't hard code any reference document in this reverse prompt, make it dynamic
+
+#################################################################
+
+Three skill/memory surfaces now carry the connection-pooling rule, in order of how aggressively each gets loaded:
+1. Key Rules — one line, always loaded into every session. This is the highest-leverage spot: any AI working in the repo sees it without invoking a skill. Points to the helper, names the real fix, flags the Alembic exception, links the doc.
+2. skills/backend-patterns/SKILL.md — the skill that the tool loads for backend work. Added a full "Database & Connection Pooling Rules" section right after the architecture rule.
+
+Each entry states the same four load-bearing facts so they survive in isolation: (1) prepared_statement_name_func is the actual fix, not statement_cache_size=0; (2) all three args go in connect_args, not top-level kwargs; (3) both web + worker engines, SQLite exempt; (4) Alembic bypasses PgBouncer.

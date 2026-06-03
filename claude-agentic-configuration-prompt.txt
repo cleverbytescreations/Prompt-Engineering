@@ -1,0 +1,52 @@
+please reverse engineer and generate the prompt that can be applied to any project to create similar and approprirate result (techstack, folder strucutre, file names etc) for that specific project in generating following claude resources. Meanwhile please also validate that any of these instructions are duplciated & cause aditional tokens. Show me a validation result first, before genreating the prompt for the final result.
+1. CLAUDE.MD
+2. .claude\skills\architecture-deep-dive
+3. .claude\skills\backemd-patterns
+4. .claude\frontend-guidelines
+5. .claude\hooks\prefer_lsp.py
+6. .claude\hooks\ts-diagnostics.sh
+7. .claude\commands\(fix-error.md, impl-phase.md, lint-fix.md, migrate.md, new-endpoint.md, phase-status.md, run-tests.md, session-end.md, update-checklist.md)
+8. .claude\settings.json - that will create following hooks
+
+"hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/prefer_lsp.py"
+          }
+        ]
+      }
+    ]
+  }
+  
+      "deny": [
+        "Bash(git push --force*)",
+        "Bash(git reset --hard*)",
+        "Bash(rm -rf *)"
+    ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"d:/PythonWorkspace/Consultant Management System/backend\" && python -m ruff check app/ --select E,F,W -q 2>&1 | head -15 || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== Session End Reminder ===' && echo 'Run /update-checklist to mark completed tasks.' && echo 'Run: cd backend && git add -p && git commit' && echo '========================='"
+          }
+        ]
+      }
+    ]
+  }    
