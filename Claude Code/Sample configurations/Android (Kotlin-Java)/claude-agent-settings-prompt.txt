@@ -1,0 +1,560 @@
+You are bootstrapping the Claude config for an Android project. The set of
+skills, commands, and hooks you create MUST be derived from this repo's
+actual stack — do not assume any specific libraries, features, or domain.
+
+# Prime directive
+Every artifact you produce is judged on one metric: tokens-per-successful-task.
+A smaller, sharper config beats a larger, thorough one. When in doubt, omit.
+
+Three failure modes to avoid above all else:
+  1. Blanket file-level denies (e.g. `Read(<file>)`) that block every
+     legitimate read of a file because ONE field in it is sensitive.
+     Always protect at the FIELD level, never the FILE level.
+  2. Recursive greps that wander into generated directories (build/,
+     .gradle/, .idea/, out/) and scan 10k–40k files per call. These
+     burn 20–90 seconds and return only compiled noise.
+  3. Pattern-only signing denies (e.g. `Bash(grep*storePassword*)`) that
+     match the grep PATTERN string and block legitimate security-audit
+     commands like `grep -r "storePassword" app/src/`. Always scope
+     signing denies to the TARGET FILE, not just the field name:
+       WRONG: "Bash(grep*storePassword*)"
+       RIGHT: "Bash(grep*storePassword*build.gradle.kts*)"
+     Cover unscoped searches (grep -r . or git grep without a path)
+     in the guard-build-dir-search.sh hook instead.
+
+# Step 1 — Discover (read-only, parallelized)
+
+Run in parallel, summarize internally, do NOT echo raw output:
+- `git ls-files`  (cap at 500 lines; if larger, sample by directory)
+- `git log --oneline -10 --name-only`  (which files are actively changing;
+  used in Step 5 to resolve ties between coexisting patterns)
+- `find . -name "*.gradle*" -not -path "*/build/*"`
+- Read: root build.gradle(.kts), settings.gradle(.kts), gradle/libs.versions.toml
+  (if present), app/build.gradle(.kts), AndroidManifest.xml, any CLAUDE.md
+- Sample 5–10 representative source files from the largest packages
+- Scan build files + local.properties for hardcoded secrets (signingConfigs
+  with inline storePassword/keyPassword, API keys, tokens). Record:
+    - the exact file path(s)
+    - the exact field names that are sensitive (e.g. storePassword,
+      keyPassword, storeFile, keyAlias, MAPS_API_KEY, FIREBASE_TOKEN)
+  Both feed the `secrets` Capability Map slot.
+
+Produce an internal **Capability Map** with these slots (mark UNKNOWN if absent):
+  language:        Kotlin / Java / mixed
+  ui:              Compose / Views(XML) / mixed
+  di:              Hilt / Koin / Dagger2 / manual / none
+  navigation:      Compose-Nav / Jetpack-Nav / Fragments / single-Activity
+  async:           Coroutines+Flow / RxJava / LiveData / mixed
+  persistence:     Room / SQLDelight / DataStore / SharedPrefs / files / none
+  networking:      Retrofit / Ktor / OkHttp-raw / none
+  serialization:   kotlinx.serialization / Moshi / Gson / none
+  testing:         JUnit4/5 + Espresso/Compose-test / Robolectric / none
+  build:           single-module / multi-module / KMP
+  ci:              GitHub Actions / Bitrise / none-detected
+  special:         camera, ML, maps, payments, AR, etc. — only if clearly present
+  secrets:         list of { path, fields[] } objects — file paths plus the
+                   exact sensitive field names within each. Drives field-level
+                   denies, the Read-tool hook, and a CLAUDE.md Key Rule.
+                   Empty list if none found.
+  pain_points:     duplicated abstractions, TODO/FIXME hotspots, manifest
+                   permissions that look stale, etc.
+
+# Step 2 — Decide what to generate (the dynamic part)
+
+Apply these rules; each generated artifact must justify its tokens:
+
+Skill rules:
+- Generate a skill ONLY for a slot that has a concrete value AND non-trivial
+  conventions in this repo. UNKNOWN slots get NO skill.
+- One skill per **concern**, not per library. Merge thin skills.
+- Hard cap: 5 skills total. If you'd exceed it, merge or drop the weakest.
+- Every "special" capability (camera, payments, ML, etc.) detected in code
+  gets its own skill — these are the highest-leverage ones.
+- Each skill ≤ 150 lines, with concrete file:line citations from THIS repo.
+
+Command rules — generate commands for **observed workflows**, not generic ones:
+- Always include: `find-feature` (entry→VM→repo→data chain), `fix-crash`
+  (stack trace → ranked hypotheses with file:line → minimal patch)
+- Conditionally include based on Capability Map:
+    multi-module → `module-deps` (show/validate module graph)
+    multi-flavor → `flavor-switch`
+    Compose     → `add-screen` matching observed scaffold
+    Views(XML)  → `add-fragment` matching observed scaffold
+    Room        → `add-entity` (entity + DAO + migration)
+    Retrofit/Ktor → `add-endpoint`
+    CI present  → `ci-repro` (run the same checks locally)
+- Drop any command whose workflow isn't actually used here.
+
+Hook rules — only propose hooks with a clear token/time payoff:
+- PreToolUse Bash: block full `./gradlew build`; suggest the narrowest task
+  observed in CI (e.g. `assembleDebug`, `testDebugUnitTest`, `:module:lint`)
+- PreToolUse Bash: block grep/find that target build/, .gradle/, .idea/,
+  out/ — re-route to `git grep`. ALWAYS GENERATE for any Android project.
+- PreToolUse Read: if `secrets` slot is non-empty, emit a field-level
+  reminder when the secret-bearing file is read. Advisory (exit 0).
+- PostToolUse Edit on *.kt/*.java: run formatter/linter if one is configured
+  (ktlint, detekt, spotless) — scoped to the changed file only.
+- UserPromptSubmit: if prompt names a screen/feature word found in the file
+  tree, suggest `/find-feature <name>` before any exploration.
+- Do NOT propose hooks for tools not present in this repo.
+
+# Step 3 — Write files
+
+## A. CLAUDE.md (HARD LIMIT: 65 lines; routing only)
+1. Project Summary — 2–4 sentences + 4–8 bullet goals + 2–4 Principles lines
+2. Tech Stack — one line per filled Capability Map slot (skip UNKNOWN)
+3. Skill Routing — one line per skill: "Use <skill> for <trigger topics>"
+4. Key Rules — 6–10 one-liners, each fully detailed in exactly one skill.
+   MUST include one rule per `secrets` entry, e.g.:
+     "Never echo values from signingConfigs in app/build.gradle.kts"
+5. Code navigation policy — copy these lines verbatim, adapted only for
+   the actual module names found in this repo:
+     - Kotlin/Java symbols → LSP/IDE-style lookup first
+     - Always use `git grep` (not `grep -r`) — respects .gitignore,
+       auto-excludes build/, .gradle/, .idea/, out/
+     - Grep fallback only for: resource IDs (R.*, @string/*), manifest
+       entries, gradle keys, version-catalog aliases, string literals
+     - Never search inside `build/`, `.gradle/`, `.idea/`, `out/` —
+       generated/compiled artifacts only
+     - For `BuildConfig.*` VALUES: read app/build.gradle.kts directly
+       (do not grep — BuildConfig is a generated file)
+     - For `BuildConfig.*` USAGES: `git grep 'BuildConfig' -- 'app/src/'`
+Forbidden in CLAUDE.md: code samples, file trees, library tutorials, history.
+
+## B. .claude/skills/<name>/SKILL.md (the set decided in Step 2)
+Each skill MUST contain:
+- Front-matter: name, description with SPECIFIC trigger phrases
+- "Conventions in THIS repo" — patterns actually observed (naming, packages,
+  error handling, threading) so generated code matches existing style
+- "Files to read first" — ≤ 5 paths, ranked, so the skill short-circuits
+  exploration on invocation
+- Concrete examples cited by path:line, not generic Android docs
+
+## C. .claude/commands/ (the set decided in Step 2)
+Each command:
+- Self-contained prompt with placeholders (use $ARGUMENTS for user input)
+- Front-matter MUST include a `skill:` field naming the exact folder under
+  .claude/skills/ that the command pulls in. Example:
+    ---
+    description: ...
+    skill: android-data-layer
+    ---
+  If a command spans multiple concerns, list them: `skill: [a, b]`. This lets
+  the harness pre-load the right context without scanning all skills.
+- Specifies the output shape so Claude doesn't over-explain
+
+## D. .claude/settings.json (the hooks decided in Step 2)
+Output as a diff against the existing settings.json if one exists.
+Mark any destructive hook as "REQUIRES USER CONFIRMATION".
+
+Canonical shape:
+  {
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "permissions": {
+      "allow": [
+        "Bash(./gradlew :app:assembleDebug*)",
+        "Bash(./gradlew :app:installDebug*)",
+        "Bash(./gradlew :app:testDebugUnitTest*)",
+        "Bash(./gradlew :app:lintDebug*)",
+        "Bash(./gradlew :app:dependencies*)",
+        "Bash(./gradlew --stop)",
+        "Bash(adb logcat*)",
+        "Bash(adb shell am*)",
+        "Bash(git status)",
+        "Bash(git diff*)",
+        "Bash(git log*)",
+        "Bash(git grep*)",
+        "Bash(grep*<secret-file-basename>*)",
+        "Bash(grep*libs.versions.toml*)",
+        "Read(<secret-file-path>)",
+        "Read(./<secret-file-path>)"
+      ],
+      "deny":  [
+        "Bash(grep*storePassword*<secret-file-basename>*)",
+        "Bash(grep*keyPassword*<secret-file-basename>*)",
+        "Bash(grep*storeFile*<secret-file-basename>*)",
+        "Bash(grep*keyAlias*<secret-file-basename>*)",
+        "Bash(grep*signingConfigs*<secret-file-basename>*)",
+        "Bash(cat*<secret-file-basename>*)"
+      ],
+      "_deny_comment": "Deny rules are scoped to <secret-file-basename> so they block direct extraction (grep storePassword build.gradle.kts) but NOT legitimate security-audit greps in source files (grep -r storePassword app/src/). Unscoped searches for signing fields are intercepted by guard-build-dir-search.sh."
+    },
+    "hooks": {
+      "PreToolUse": [
+        { "matcher": "Bash", "hooks": [
+            { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-gradle-build.sh" },
+            { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-build-dir-search.sh" }
+        ]},
+        { "matcher": "Read", "hooks": [
+            { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-signing-read.sh" }
+        ]}
+      ],
+      "PostToolUse":     [{ "matcher": "Edit", "hooks": [ ... ] }],
+      "UserPromptSubmit":[{ "hooks": [ ... ] }]
+    },
+    "_proposed_hooks": { ... }
+  }
+
+Rules for the `permissions` block:
+
+PRECEDENCE: In Claude Code, when a command matches BOTH an allow and a deny
+pattern, DENY WINS. The whole design below relies on this:
+  allow "Bash(grep*build.gradle.kts*)"   ← safe greps pass
+  deny  "Bash(grep*storePassword*build.gradle.kts*)"   ← signing greps blocked
+Both match `grep storePassword app/build.gradle.kts`, and deny wins so the
+extraction is blocked while ordinary build-config greps still pass. Generators
+that flatten this into a single rule will break the design.
+
+BASENAME DERIVATION: For each entry in `secrets`, compute:
+  <secret-file-basename> = basename of the file path
+    e.g. "app/build.gradle.kts"   → "build.gradle.kts"
+         "local.properties"        → "local.properties"
+         "gradle.properties"       → "gradle.properties"
+Use the BASENAME (not the full path) in the deny/allow glob patterns.
+Permission rules are glob-matched against the literal command string —
+basenames give the widest correct match (covers both `./app/build.gradle.kts`
+and absolute paths Claude may use at runtime).
+
+PROTECT SECRETS AT THE FIELD LEVEL, NOT THE FILE LEVEL. A blanket
+`Read(<file>)` deny blocks every legitimate read of that file (buildConfig,
+SDK levels, dependencies, desugaring flags, variants) and forces every task
+that needs build metadata to fail or prompt. Do not do this.
+
+For every entry in the `secrets` Capability Map slot:
+- Add the file path to `allow` in BOTH path forms so legitimate reads work:
+    "Read(app/build.gradle.kts)"
+    "Read(./app/build.gradle.kts)"
+- Add a `Bash(grep*<basename>*)` allow so safe grep on the file works.
+- For each sensitive field name, add a deny SCOPED TO THE SECRET FILE:
+    "Bash(grep*<field-name>*<secret-file-basename>*)"
+  NOT:
+    "Bash(grep*<field-name>*)"   ← WRONG: blocks audit of source files too
+  The glob order matters: field-name comes before file-name so it matches
+  `grep storePassword build.gradle.kts` but NOT
+  `grep -r storePassword app/src/main/java/` (the latter is a valid
+  security audit of new code and must not be blocked).
+- Add a narrow `cat` deny tied to the file basename:
+    "Bash(cat*<secret-file-basename>*)"
+- Enable the `guard-signing-read.sh` Read-tool hook (see scripts section)
+  so the model gets a hard reminder of the field names whenever the file
+  is read by the Read tool.
+- Add a one-line Key Rule in CLAUDE.md citing the file by name.
+- The guard-build-dir-search.sh hook covers the remaining gap: unscoped
+  `grep -r <field>` or `grep -r <field> .` with no path that could
+  still reach the secret file. That hook checks for signing field names
+  without a src/-scoped path and blocks with a redirect message.
+
+Allowlist the narrow gradle/adb/git commands actually used in CI or docs,
+plus `Bash(git grep*)` and `Bash(grep*libs.versions.toml*)` — these are the
+preferred search commands and prompting for them on every search is pure
+token waste.
+
+Conventional hook scripts to generate (use these exact filenames):
+
+  guard-gradle-build.sh        ← PreToolUse on Bash. ALWAYS GENERATE if the
+                                 repo has a gradlew wrapper. Blocks bare
+                                 `./gradlew build` and steers to the
+                                 narrowest task observed in CI. Exit 2 on
+                                 block, exit 0 otherwise.
+
+  guard-build-dir-search.sh    ← PreToolUse on Bash. ALWAYS GENERATE for any
+                                 Android project (build/ + .gradle/ are
+                                 always present). Three responsibilities:
+                                 (a) hard-block grep/find that target
+                                     build/, .gradle/, .idea/, out/ — emit
+                                     `git grep` replacement in stderr;
+                                 (b) re-route grep for BuildConfig (the
+                                     generated class) to read
+                                     app/build.gradle.kts directly;
+                                 (c) hard-block grep for signing field
+                                     names (storePassword, keyPassword,
+                                     storeFile, keyAlias, signingConfig)
+                                     when the command has NO src/-scoped
+                                     path — these could reach the secret
+                                     file. Allow when path contains src/,
+                                     main/java, or main/kotlin (valid
+                                     security-audit of new code);
+                                 (d) warn-only on unscoped `grep -r` that
+                                     does not pin a source path.
+                                 Typical savings: prevents 20–90s scans of
+                                 10k–40k generated files per misfired
+                                 search, plus covers the gap left by
+                                 file-scoped deny rules.
+
+  guard-signing-read.sh        ← PreToolUse on Read. GENERATE ONLY if the
+                                 `secrets` slot is non-empty. Matches the
+                                 secret-bearing file path(s); emits a
+                                 stderr reminder listing the exact field
+                                 names that must not be echoed. Always
+                                 exit 0 — advisory, not blocking. The
+                                 deny rules in `permissions` enforce the
+                                 hard stops; this hook prevents accidental
+                                 echo in answers.
+
+  suggest-find-feature.sh      ← UserPromptSubmit. ALWAYS GENERATE if any
+                                 command named `find-feature` was created
+                                 in Step 3C. Scans the user prompt for
+                                 screen/component/feature names found in
+                                 the file tree and prints a one-line hint.
+                                 Always exit 0.
+
+  lint-changed-<lang>.sh       ← PostToolUse on Edit. GENERATE ONLY if a
+                                 formatter/linter is wired into gradle
+                                 (ktlint, detekt, spotless in
+                                 libs.versions.toml or build files).
+                                 <lang> = kotlin | java. If the tool is
+                                 absent, this entry goes to
+                                 `_proposed_hooks` and the script is NOT
+                                 written.
+
+Each generated script MUST start with:
+    #!/usr/bin/env bash
+    set -euo pipefail
+…and end with explicit `exit 0` on the success path. The script body must
+parse stdin JSON (see parsing rules below) and match the exit-code contract.
+Name additional repo-specific hooks with the same `<verb>-<noun>.sh` shape
+so they sort and grep predictably.
+
+Rules for the `hooks` block (active hooks):
+- Reference scripts via $CLAUDE_PROJECT_DIR/.claude/hooks/<name>.sh — never
+  relative paths.
+- Write the script bodies as part of this step, in .claude/hooks/, and
+  `chmod +x` them. A hook entry without an executable script is a bug.
+- Hook scripts receive the tool input as JSON on stdin. Parse with:
+    payload="$(cat || true)"
+    cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty')"
+  Provide a sed fallback if jq is not available — jq is not guaranteed on
+  every developer machine.
+- For Read-tool hooks, parse `.tool_input.file_path` instead of `.command`.
+- Exit codes: 0 = allow / no-op; 2 = block (stderr is shown to Claude as the
+  tool error). Never use exit 1 — it is reserved for script-internal errors.
+- Non-blocking hooks (UserPromptSubmit hints, Read-tool reminders, advisory
+  checks) MUST always `exit 0`, regardless of the match result.
+- Gradle guard regex: match `gradlew` anywhere in the command string (the
+  command arrives as `./gradlew ...`, never as a bare word). A word-boundary
+  anchor will silently fail to match.
+- Build-dir guard regex: match `(grep|find)` followed by anything, followed
+  by a build-like directory token. Use a path token that matches `build/`,
+  `./build/`, `app/build/`, or trailing `/build` at end-of-arg.
+
+Rules for the `_proposed_hooks` block (deferred):
+- Any hook that depends on a tool not present in the repo (ktlint, detekt,
+  spotless not in libs.versions.toml; lint scripts that don't exist yet)
+  goes here, NOT in active `hooks`.
+- Each deferred entry MUST include a `_blocker` field naming the missing
+  prerequisite, e.g.:
+    "_blocker": "ktlint not in gradle/libs.versions.toml; add alias first."
+- The `_proposed_hooks` key is informational only — Claude Code does not
+  execute it. Treat it as a TODO list scoped to settings.
+
+Skeletons for the four always-generated scripts (adapt, do not re-derive):
+
+  # guard-gradle-build.sh
+  #!/usr/bin/env bash
+  set -euo pipefail
+  payload="$(cat || true)"
+  if command -v jq >/dev/null 2>&1; then
+    cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // .command // empty')"
+  else
+    cmd="$(printf '%s' "$payload" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)"
+  fi
+  case "$cmd" in *"gradlew"*) ;; *) exit 0 ;; esac
+  case "$cmd" in
+    *"assemble"*|*"install"*|*"test"*|*"lint"*|*"dependencies"*|*"--stop"*|*"clean"*) exit 0 ;;
+  esac
+  if printf '%s' "$cmd" | grep -Eq 'gradlew([[:space:]]+-[^[:space:]]+)*[[:space:]]+(:[a-zA-Z0-9_-]+:)?build([[:space:]]|$)'; then
+    {
+      echo "Blocked: \`./gradlew build\` triggers a full build."
+      echo "Prefer: ./gradlew <observed-narrow-task> --offline"
+    } 1>&2
+    exit 2
+  fi
+  exit 0
+
+
+  # guard-build-dir-search.sh
+  #!/usr/bin/env bash
+  set -euo pipefail
+  payload="$(cat || true)"
+  if command -v jq >/dev/null 2>&1; then
+    cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // .command // empty')"
+  else
+    cmd="$(printf '%s' "$payload" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)"
+  fi
+  # 1. Hard-block grep/find that target generated directories.
+  if printf '%s' "$cmd" | grep -Eq '(grep|find)[[:space:]].*[[:space:]](\.|/)?build(/|$)'; then
+    {
+      echo "Blocked: searching inside build/ is slow and returns only generated/compiled artifacts."
+      echo "Use:  git grep '<pattern>' -- 'app/src/'"
+      echo "Or:   find app/build/generated -name '<filename>' 2>/dev/null  (if you specifically need a generated file)"
+    } 1>&2
+    exit 2
+  fi
+  # 2. Re-route: grep for BuildConfig → read build.gradle.kts.
+  if printf '%s' "$cmd" | grep -Eq "grep.*BuildConfig"; then
+    if printf '%s' "$cmd" | grep -Eq "grep.*BuildConfig.*src/"; then exit 0; fi
+    {
+      echo "Blocked: grepping for BuildConfig searches generated code."
+      echo "For VALUES:  Read app/build.gradle.kts directly."
+      echo "For USAGES:  git grep 'BuildConfig' -- 'app/src/'"
+    } 1>&2
+    exit 2
+  fi
+  # 3. Hard-block grep for signing field names without a src/-scoped path.
+  #    Populate the field list at generation time from the `secrets` slot.
+  #    Without this, an unscoped `grep -r storePassword .` would bypass the
+  #    file-scoped deny rules and still read app/build.gradle.kts.
+  signing_fields="storePassword|keyPassword|storeFile|keyAlias|signingConfig"
+  if printf '%s' "$cmd" | grep -Eq "grep.*(${signing_fields})"; then
+    # Allow if the path is explicitly scoped to source code (security audit).
+    # Cover all common source-tree path tokens, not just `src/`.
+    if printf '%s' "$cmd" | grep -Eq "src/|app/src|main/java|main/kotlin"; then
+      exit 0
+    fi
+    {
+      echo "Blocked: unscoped grep for signing field names could read app/build.gradle.kts."
+      echo "To audit NEW source code for signing leakage, scope to src/:"
+      echo "  grep -r \"storePassword\\|keyPassword\" app/src/main/java/"
+      echo "  git grep 'storePassword\\|keyPassword' -- 'app/src/'"
+    } 1>&2
+    exit 2
+  fi
+  # 4. Warn-only on unscoped recursive grep.
+  if printf '%s' "$cmd" | grep -Eq "^grep -r|^grep --recursive"; then
+    if ! printf '%s' "$cmd" | grep -Eq "(src/|git grep)"; then
+      echo "Warning: unscoped recursive grep will scan build/ and .gradle/. Prefer: git grep '<pattern>' -- 'app/src/'" 1>&2
+    fi
+  fi
+  exit 0
+
+
+  # guard-signing-read.sh
+  #!/usr/bin/env bash
+  set -euo pipefail
+  payload="$(cat || true)"
+  if command -v jq >/dev/null 2>&1; then
+    file_path="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // .file_path // empty')"
+  else
+    file_path="$(printf '%s' "$payload" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)"
+  fi
+  # Replace the path glob and field list at generation time from the `secrets` slot.
+  case "$file_path" in
+    *app/build.gradle.kts) ;;
+    *) exit 0 ;;
+  esac
+  {
+    echo "REMINDER: Reading app/build.gradle.kts."
+    echo "Do NOT echo, quote, or copy these field values into answers, diffs, or code:"
+    echo "  storeFile, storePassword, keyAlias, keyPassword"
+    echo "Read this file only for: buildConfig, SDK levels, compileOptions, dependencies, variants."
+  } 1>&2
+  exit 0
+
+
+  # suggest-find-feature.sh
+  #!/usr/bin/env bash
+  set -euo pipefail
+  payload="$(cat || true)"
+  if command -v jq >/dev/null 2>&1; then
+    prompt="$(printf '%s' "$payload" | jq -r '.prompt // empty')"
+  else
+    prompt="$(printf '%s' "$payload" | sed -n 's/.*"prompt"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -n1)"
+  fi
+  lc="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
+  # Populate `keywords` at generation time from screen / component / feature
+  # names found in the actual file tree.
+  keywords=("homescreen" "camerapreview" "imageloader" "folder rename")
+  for kw in "${keywords[@]}"; do
+    case "$lc" in
+      *"$kw"*)
+        echo "[hint] Prompt mentions \"$kw\" — consider \`/find-feature ${kw}\` first."
+        exit 0
+        ;;
+    esac
+  done
+  exit 0
+
+Customize every skeleton at generation time (path globs, field lists,
+keyword arrays, narrow-task suggestion text) — do NOT ship them verbatim.
+
+Smoke-test every active hook before reporting Step 6:
+- Pipe a representative JSON payload to each script and verify exit code +
+  stderr. Include the test commands and observed exit codes in the Step 6
+  output so the user can re-run them.
+- Required test cases:
+    guard-gradle-build.sh:
+      `./gradlew build`                       expect exit 2
+      `./gradlew :app:assembleDebug`          expect exit 0
+      `ls -la`                                expect exit 0 (pass-through)
+    guard-build-dir-search.sh:
+      `grep -r BuildConfig build/`                        expect exit 2 (build-dir block)
+      `grep BuildConfig app/build.gradle.kts`             expect exit 2 (reroute to source)
+      `git grep BuildConfig`                              expect exit 0
+      `grep -r storePassword .`                           expect exit 2 (unscoped signing block)
+      `grep -r "storePassword" app/src/main/java/`        expect exit 0 (valid audit, src-scoped)
+      `grep -r foo .`                                     expect exit 0 + stderr warning
+      `ls -la`                                            expect exit 0 (pass-through)
+    guard-signing-read.sh:
+      read of app/build.gradle.kts            expect exit 0 + stderr reminder
+      read of an unrelated .kt file           expect exit 0 + no output
+    suggest-find-feature.sh:
+      prompt mentioning a known keyword       expect exit 0 + hint on stdout
+      unrelated prompt                        expect exit 0 + no output
+
+# Step 4 — Token-efficiency rules embedded in every skill
+
+Copy these verbatim into each SKILL.md so they apply when the skill is loaded:
+1. Read with `offset`/`limit` for files > 300 lines; never re-read this session
+   unless the file was edited.
+2. Search with `git grep` first — it respects .gitignore and auto-excludes
+   build/, .gradle/, .idea/, out/. Use plain `grep -r` only when you have
+   a specific path scope (`-- 'app/src/'`).
+3. Never search inside `build/`, `.gradle/`, `.idea/`, `out/` — these
+   contain only generated/compiled artifacts. For `BuildConfig.*` values,
+   read app/build.gradle.kts directly; do not grep for the generated class.
+4. Use Grep with `output_mode:"files_with_matches"` first; targeted reads
+   after.
+5. Parallelize independent reads/greps in one tool block.
+6. For investigations needing > 3 queries, spawn an Explore subagent to
+   keep the main context clean.
+7. Cite file:line in every answer so the user can verify without re-asking.
+8. Prefer Edit over Write; never rewrite a file to change a few lines.
+9. Skip "what I'm about to do" preambles when a single tool call would
+   suffice.
+
+# Step 5 — Architecture fidelity
+
+Every code-generating skill or command must:
+- Match observed naming, package layout, error handling, threading
+- Refuse to invent libraries or patterns not present in the Capability Map
+- When two patterns coexist in the repo, pick the one in the most-recent
+  commits (use `git log -10 --name-only` to decide)
+
+# Step 6 — Output
+
+After writing files, print exactly:
+1. The Capability Map (as a table; include the `secrets` slot with both
+   path and field names).
+2. A second table — use these exact column headers, do not substitute:
+     | File | Lines | Tokens-saved hypothesis |
+   The hypothesis column must be ONE concrete sentence naming the
+   behavior the artifact prevents or short-circuits. Examples:
+     "Prevents 3–5 re-reads of HomeScreen.kt by pre-seeding its conventions."
+     "Blocks ~4 min full-build runs in favor of assembleDebug --offline."
+     "Prevents 20–90s scans of 10k+ generated files in build/ per misfired grep."
+   Vague entries like "Purpose" or "Routing" are rejected.
+3. Hook smoke-test results: command + observed exit code for each active hook.
+4. Three example prompts that exercise the new routing end-to-end.
+5. Any pain_points from discovery that warrant follow-up tasks.
+
+Constraints:
+- Do not invent files, libraries, or patterns not present in the repo.
+- Do not duplicate content between CLAUDE.md and skills.
+- Do not include secrets, signing config, or API keys anywhere — and add
+  FIELD-level (not file-level) permissions.deny + Key Rule for every
+  secret-bearing file discovered.
+- Ask before overwriting an existing CLAUDE.md or skill file.
+- Every active hook must have an executable script written this run; a hook
+  reference without a script is a defect, not a TODO.
+- If the Capability Map is mostly UNKNOWN, STOP and ask the user to point
+  at the main module — do not generate a generic config.
