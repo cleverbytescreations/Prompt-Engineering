@@ -1,0 +1,42 @@
+# Project Name
+
+## Overview
+Brief description of what this project does and its purpose.
+
+## Tech Stack
+- Language: (e.g., Python 3.11, TypeScript)
+- Framework: (e.g., FastAPI, Next.js)
+- Database: (e.g., PostgreSQL, SQLite)
+- Key libraries: (list major dependencies)
+
+## Project Structure
+Describe the top-level directory layout and what each folder is for.
+
+## Development Setup
+Steps to get the project running locally:
+1. Install dependencies: `npm install` / `pip install -r requirements.txt`
+2. Copy env file: `cp .env.example .env`
+3. Run dev server: `npm run dev`
+
+## Common Commands
+- `npm run dev` — start development server
+- `npm run build` — production build
+- `npm test` — run tests
+- `npm run lint` — lint and format
+
+## Architecture & Key Decisions
+Explain any non-obvious architectural choices, patterns used, or decisions that would surprise a new developer.
+
+## Code Conventions
+- File naming: (e.g., kebab-case, PascalCase for components)
+- Imports: (e.g., absolute vs relative)
+- Any project-specific patterns to follow
+
+## Testing
+How tests are organized, what to test, and how to run them.
+
+## Environment Variables
+List required env vars and what they do (not the values themselves).
+
+## What NOT to Do
+Things Claude (or developers) should avoid in this codebase — past pitfalls, off-limits files, etc.
