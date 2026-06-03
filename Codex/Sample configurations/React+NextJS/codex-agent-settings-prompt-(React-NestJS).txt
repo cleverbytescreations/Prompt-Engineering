@@ -774,6 +774,23 @@ Use this skill when the task involves:
 - Rerun the specific failing test before rerunning the full suite.
 - Use LSP hover, definitions, references, and diagnostics before changing types broadly.
 - Avoid suppressing lint or type errors unless there is a documented reason.
+
+## Conditional Codex Python / SQLite Rules
+
+Include this section only when Python, pytest, SQLite, SQLAlchemy, Alembic, or aiosqlite is actually detected in the repository. Omit it completely for pure React/NestJS projects.
+
+- Prefer in-memory SQLite for Python unit/API tests: `sqlite+aiosqlite:///:memory:` or the repo's existing in-memory fixture.
+- Do not generate file-backed SQLite migration probes for Codex validation, because on-disk SQLite can hit sandbox file locks, path parsing issues, or I/O limits.
+- Run pytest with module invocation and disabled cache metadata:
+  ```bash
+  python -m pytest <test-scope> -q -p no:cacheprovider
+  ```
+- For Python coverage, keep the coverage file inside the repo or a known writable temp directory:
+  ```bash
+  COVERAGE_FILE=<repo-or-temp-path>/.coverage.codex python -m pytest <test-scope> --cov=<module> --cov-report=term-missing -p no:cacheprovider
+  ```
+- If coverage.py raises a file permission, SQLite data-file, or rename error while tests pass, report the pytest pass count separately and mark coverage as environment-blocked. Coverage.py uses a SQLite-backed data file even when the application test database is in-memory.
+- Use Docker/Postgres, not SQLite, for migrations and PostgreSQL-specific behavior such as JSONB, CITEXT, partial indexes, `ON CONFLICT`, PgBouncer, and asyncpg settings.
 ```
 
 ---
@@ -1275,12 +1292,20 @@ Optional: `/run-tests unit`, `/run-tests integration`, `/run-tests e2e`, `/run-t
    - start only the required service if needed
    - run tests inside the container
 
-3. If a specific test fails:
+3. If Python/pytest with SQLite is detected:
+   - prefer the repo's in-memory SQLite test fixture
+   - do not generate file-backed SQLite database probes for Codex validation
+   - include `-p no:cacheprovider` in pytest commands when running inside Codex
+   - include a focused coverage command using `--cov` and `--cov-report=term-missing`
+   - state that coverage.py file-permission/data-file failures can be environment-blocked even when tests pass
+   - use Docker/Postgres for Alembic migrations and PostgreSQL-specific behavior
+
+4. If a specific test fails:
    - read only the failing test and target module
    - fix the root cause
    - rerun the specific failing test before the full suite
 
-4. Report pass/fail count, skipped tests, and any remaining failure with file:line.
+5. Report pass/fail count, skipped tests, coverage summary when requested, and any remaining failure with file:line.
 ```
 
 ### `lint-fix.md`
@@ -1643,6 +1668,8 @@ Run these checks after generating all files. Fix any failure before handing off.
 - [ ] Lint hook uses the detected Node linter, not Ruff.
 - [ ] Migration command uses the detected migration tool, not Alembic unless Alembic actually exists.
 - [ ] Test command uses the detected runner and execution mode.
+- [ ] Python/pytest commands include Codex-safe SQLite guidance only when Python tooling is detected.
+- [ ] Python coverage commands avoid file-backed SQLite probes and use `-p no:cacheprovider` when appropriate.
 
 ### Architecture integrity checks
 
