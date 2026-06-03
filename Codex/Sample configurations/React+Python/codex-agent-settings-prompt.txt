@@ -45,6 +45,7 @@ Each fact has exactly ONE canonical home. Violations cost tokens every conversat
 | Transactional outbox full spec | `backend-patterns` skill |
 | Cross-cutting principles (AI role, moderation) | `AGENTS.md` |
 | Frontend conventions | `frontend-guidelines` skill |
+| Lint, typecheck, tests, coverage, and Codex-safe Python/SQLite execution | `testing-quality-gates` skill |
 
 When a skill needs a fact it does not own, write one sentence:
 "See `[owning skill]` for `[topic]`." Never duplicate the full content.
@@ -405,6 +406,65 @@ Prefer exact file paths, minimal production-usable code, typed props, reusable p
 
 ---
 
+## File 4a: `.agents/skills/testing-quality-gates/SKILL.md`
+
+Generate this file when the repo has lint, typecheck, build, test, coverage, CI, or migration verification conventions. Include Python/SQLite guidance only when Python, pytest, SQLite, SQLAlchemy, Alembic, or aiosqlite is actually detected.
+
+```markdown
+---
+name: testing-quality-gates
+description: Use for linting, formatting, type checking, builds, tests, coverage, CI, migration verification, and Codex-safe test execution.
+---
+
+# Testing Quality Gates
+
+Use this skill when the task involves:
+- choosing or running tests
+- measuring coverage
+- fixing lint, format, type, or CI failures
+- verifying migrations or database behavior
+
+## Tooling Baseline
+
+- Linter: [linter_cmd]
+- Type checker: [type_checker_cmd]
+- Test runner: [test_cmd]
+- Coverage command: [coverage_cmd or omit]
+- Migration verification: [migration_status_cmd and migration_apply_cmd or omit]
+
+## Default Verification Order
+
+1. Run the narrowest relevant test or checker for edited files.
+2. Run lint/type checks for the affected package.
+3. Run focused coverage when the user requests coverage or the change touches shared backend logic.
+4. Run migration verification when schema/migration files changed.
+
+## Conditional Codex Python / SQLite Rules
+
+Include this section only when Python/pytest/SQLite tooling is detected.
+
+- Prefer in-memory SQLite for unit/API tests: `sqlite+aiosqlite:///:memory:` or the repo's existing in-memory fixture.
+- Do not create file-backed SQLite databases for ad hoc Codex migration probes.
+- Run pytest with module invocation and disabled cache metadata:
+  ```bash
+  python -m pytest <test-scope> -q -p no:cacheprovider
+  ```
+- For coverage, keep the coverage file inside the repo or a known writable temp directory:
+  ```bash
+  COVERAGE_FILE=<repo-or-temp-path>/.coverage.codex python -m pytest <test-scope> --cov=<module> --cov-report=term-missing -p no:cacheprovider
+  ```
+- If coverage.py raises a file permission, SQLite data-file, or rename error while tests pass, report the pytest pass count separately and mark coverage as environment-blocked. Coverage.py uses a SQLite-backed data file even when the application test database is in-memory.
+- Use Docker/Postgres, not SQLite, for Alembic migrations and PostgreSQL-specific behavior such as JSONB, CITEXT, partial indexes, `ON CONFLICT`, PgBouncer, and asyncpg settings.
+
+## Failure Handling
+
+- Rerun the specific failing test before the full suite.
+- Treat SQLite disk I/O errors, temp-file locks, or cache-provider failures as environment signals before rewriting application logic.
+- Report exact pass/fail counts, skipped tests, and coverage percentages when requested.
+```
+
+---
+
 ## File 5: `.agents/hooks/prefer_lsp.py`
 
 Adapt the extension list to the project's primary typed languages.
@@ -530,6 +590,7 @@ Run directory/file checks on each referenced path to verify it exists where appl
 | `[linter_autofix_cmd]` | lint auto-fix command |
 | `[type_checker_cmd]` | type check command |
 | `[test_cmd]` | test command with flags in the detected execution mode |
+| `[coverage_cmd]` | focused coverage command, or omit coverage references if coverage tooling is absent |
 | `[test_dir]` | test directory path |
 | `[tasks_file]` | checklist file path |
 | `[checklist_file]` | git-committed checklist file for staging |
@@ -548,6 +609,9 @@ Special rule for `run-tests.md`:
 - Include a container readiness check such as `docker compose ps [service]` and a project-appropriate `docker compose up -d [service]` instruction when needed.
 - If no Docker Compose-backed test service exists, generate standalone host/in-project test commands instead.
 - Do not include both Docker and standalone command variants unless the discovered project genuinely supports both.
+- If Python/pytest with SQLite is detected, prefer in-memory SQLite test fixtures and include `python -m pytest ... -p no:cacheprovider`; do not generate file-backed SQLite migration probes.
+- If Python coverage is requested or coverage tooling is detected, include a focused `--cov` command that writes coverage data inside the repo or a known writable temp directory.
+- If Alembic/PostgreSQL-specific behavior is detected, instruct Codex to verify migrations with Docker/Postgres rather than SQLite.
 - For failing tests, instruct Codex to rerun the specific failing unit test in the same detected execution mode before rerunning the full suite.
 
 ### `fix-error.md` blueprint
@@ -791,6 +855,8 @@ Optional phase number: `/session-end 3`
    ```
    Do not commit if required tests are red.
 
+   For Python/pytest projects in Codex, prefer `python -m pytest -q -p no:cacheprovider` and the repo's in-memory SQLite fixture. Use Docker/Postgres for migrations and PostgreSQL-specific checks.
+
 4. Update checklist:
    Run `/update-checklist <phase>` when a phase number is known.
 
@@ -958,5 +1024,8 @@ Run these checks after generating all files:
 - [ ] Search `select(`, `insert(`, `update(`, and `delete(` in `[services_path]` - service files should not own SQLAlchemy query construction
 - [ ] Verify `[repositories_path]` exists or is generated when backend services require SQLAlchemy queries
 - [ ] Verify each new or substantially changed SQLAlchemy-backed service delegates query construction to repository/data-access functions
+- [ ] Python/pytest commands include `python -m pytest ... -p no:cacheprovider` only when Python tooling is detected
+- [ ] Python coverage commands avoid file-backed SQLite migration probes and explain coverage.py file errors can be environment-blocked
+- [ ] Alembic/PostgreSQL-specific checks use Docker/Postgres rather than SQLite when PostgreSQL behavior matters
 
 Output the generated files with minimal duplication and strong ownership boundaries so Codex spends fewer tokens rediscovering the same project facts.
