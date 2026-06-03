@@ -1,0 +1,145 @@
+
+>>>> Prompt skill design for React+NodeJS (Codex)
+
+Files to refer:
+1) Docs\codex-agent-settings-prompt.txt
+
+The above file is a reverse engineered prompt template to generate necessary skills, commands, hooks etc for "Codex" AI tool. This pronmpt is created for generating these skills for the following techstack (Refer: "Current Techstack"). Please analyze and let me now what are the changes required in this prompt template to generate similar skills for "Target Techstack"
+
+Current Techstack:
+-----------------
+UI - React
+API - Pythom / FastAPI
+Database - PostgreSQL
+
+Target Techstack:
+-----------------
+UI - React
+API - NodeJS (configured with the Fastify adapter) 
+DB - PostgreSQL
+
+
+Expected Output:
+----------------
+Please analyze the referenced prompt template and provide the following:
+
+
+1. Required Changes for Target Stack
+   - List the changes required to adapt the prompt for the "Target Techstack".
+   - Highlight which parts should be retained as-is.
+   - Highlight which parts must be modified.
+   - Highlight which parts should be removed if they are specific to another stack.
+
+2. Recommended Skill Structure
+   Propose the skill files that should be generated for this stack, such as:
+
+   - architecture-deep-dive
+   - frontend-guidelines
+   - backend-patterns
+   - database-patterns
+   - api-contract-guidelines
+   - testing-quality-gates
+   - deployment-devops-guidelines, if applicable
+
+3. Recommended Commands
+   Suggest suitable Codex slash commands for this stack, such as:
+
+   - /impl-phase
+   - /new-endpoint
+   - /new-component
+   - /migrate
+   - /run-tests
+   - /lint-fix
+   - /fix-error
+   - /phase-status
+   - /update-checklist
+   - /session-end
+
+4. Recommended Hooks
+   Suggest hooks suitable for this stack, including:
+
+   - PreToolUse hook to prefer LSP over grep for Python, TypeScript, and TSX files
+   - PostToolUse hook for TypeScript diagnostics after React file edits
+   - PostToolUse hook for Ruff or equivalent Python linting after backend edits
+   - Optional mypy or pyright checks
+   - Optional test hooks for critical files
+   
+5. Required Placeholder Replacements
+   Provide a placeholder replacement table for this stack, including examples for:
+
+   - [frontend_dir]
+   - [backend_dir]
+   - [models_path]
+   - [schemas_path]
+   - [services_path]
+   - [repositories_path]
+   - [endpoints_path]
+   - [migration_tool]
+   - [migration_dir]
+   - [linter_cmd]
+   - [type_checker_cmd]
+   - [test_cmd]
+   - [frontend_build_cmd]
+   - [tasks_file]
+
+6. Optimized Final Prompt
+   Rewrite the original prompt into a clean, reusable, production-ready prompt that can be used with an AI coding tool to generate Codex configuration for this target stack.
+
+The final prompt should:
+   - Be generic enough to apply to any React + FastAPI + PostgreSQL project.
+   - Force the AI tool to inspect the actual project structure before generating files.
+   - Avoid hardcoded assumptions.
+   - Avoid copying stack-specific rules from unrelated projects.
+   - Ensure every placeholder is replaced with actual project values.
+   - Ensure Codex skills are concise and non-duplicative.
+   - Ensure each architectural fact has only one canonical location.
+   - Include validation checks after file generation.
+   
+======================================================================================================================
+
+Files to refer:
+1) Docs\codex-agent-settings-prompt.txt
+
+Please apply all the above changes into a new ptompt desing tempalte and save it in the following locatino.
+
+Objective:
+----------
+Using the new ptompt, I should be able to generate all necessary skills, commands, hooks and other settings for a new project such that using these settings, I should be able to implement new features or fix issues using minimal tokesn & save cost.
+
+Output location:
+-----------------
+Docs/codex-agent-settings-prompt-(React-NestJS).txt
+
+>>>>>>>>>
+Prompt Template Changes: Python/FastAPI ? Node.js/Fastify
+Stack Replacements
+	FastAPI ? Fastify with fastify-type-provider-zod
+	SQLAlchemy + Alembic ? Prisma (schema.prisma as single source of truth)
+	Pydantic ? Zod (validation + TypeScript type inference)
+	Celery ? BullMQ (job queue on Redis db=0)
+	pytest ? Vitest (inside Docker)
+	Ruff + mypy ? ESLint + tsc --noEmit (both cover backend now)
+New Skills Added
+	database-patterns — Prisma schema rules, migration discipline, $transaction patterns, multi-tenancy at DB layer
+	api-contract-guidelines — Zod schema design, Fastify type-provider wiring, OpenAPI, error response shape
+Hooks Overhauled
+	All hooks converted to Python .py scripts (no .sh — Windows compatibility)
+	ts-diagnostics now covers both frontend/ and backend/ (entire project is TypeScript)
+	ruff-check.py replaced by eslint-check.py (advisory, exits 0)
+	prisma-validate.py added — triggers on schema.prisma edits, exits 2 on errors
+Commands Updated
+	/impl-phase order: Prisma model ? validate ? migrate ? Zod schema ? repo ? service ? Fastify plugin ? register ? BullMQ worker
+	/new-endpoint uses Fastify plugin pattern with withTypeProvider<ZodTypeProvider>() instead of FastAPI decorators
+	/migrate uses prisma migrate dev --create-only ? review SQL ? apply (not alembic revision)
+	/run-tests uses docker compose exec api npx vitest run (not pytest)
+	/new-component added as a new command (React component + TanStack Query hook scaffold)
+Ownership Table Expanded
+	5 owners ? 7 owners: added database-patterns (owns $transaction and Prisma rules) and api-contract-guidelines (owns Zod + type-provider wiring)
+Settings Updated
+	settings.json permissions: pytest ? vitest, alembic ? prisma, added biome and npm run dev
+	PostToolUse hooks: removed inline ruff shell command; replaced with eslint-check.py and prisma-validate.py Python scripts
+Validation Checklist Expanded
+	15 checks ? 20 checks
+	New checks: PrismaClient must not appear in services or routes; prisma. calls must not appear in services; BullMQ Queue instantiation must not appear in route handlers
+
+======================================================================================================================

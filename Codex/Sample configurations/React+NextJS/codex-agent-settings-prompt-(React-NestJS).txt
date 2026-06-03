@@ -1,0 +1,1679 @@
+# Prompt: Generate Codex Agent Configuration for a React + NestJS Fastify + PostgreSQL Project
+
+You are setting up Codex configuration for an existing software project.
+
+The target stack family is:
+- UI: React
+- API: Node.js with NestJS configured to use the Fastify adapter
+- Database: PostgreSQL
+
+Do not assume the exact project shape. The project may be a monorepo, a pair of sibling apps, or a single package with frontend and backend folders. Every generated file must be based on what you discover in the repository.
+
+Never generate `.claude/` files. Never use `CLAUDE.md` as the primary routing document. Generate only Codex-supported repository resources such as `AGENTS.md`, `.agents/skills`, `.agents/hooks`, `.agents/commands`, and `.agents/settings.json` when supported by the current Codex setup.
+
+---
+
+## Discovery Requirements
+
+Before generating anything, inspect the project and derive every value from the repository:
+
+1. Read `AGENTS.md` if it exists; otherwise read `README.md` and root-level docs.
+2. List the root directory to identify top-level apps, packages, docs, and tooling.
+3. Read root package manifests and workspace files:
+   - `package.json`
+   - `pnpm-workspace.yaml`
+   - `turbo.json`
+   - `nx.json`
+   - `lerna.json`
+   - lockfiles such as `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, or `bun.lockb`
+4. Identify the frontend package or folder by inspecting package dependencies and source entry points.
+5. Identify the backend package or folder by inspecting package dependencies and NestJS entry points.
+6. Confirm whether NestJS uses the Fastify adapter by checking for packages and code such as:
+   - `@nestjs/platform-fastify`
+   - `NestFactory.create<NestFastifyApplication>()`
+   - `new FastifyAdapter(...)`
+7. Identify exact frontend libraries:
+   - React version
+   - build framework or tool such as Vite, Next.js, Remix, or custom tooling
+   - router
+   - data-fetching library
+   - state library
+   - form library
+   - validation library
+   - UI library
+   - styling system
+   - mock/demo tooling if any
+   - i18n library if any
+8. Identify exact backend libraries:
+   - NestJS version
+   - Fastify adapter version
+   - ORM, query builder, or PostgreSQL client
+   - migration tool
+   - request validation approach
+   - auth strategy
+   - queue/background worker system
+   - cache client
+   - logging and observability tools
+   - test runner
+   - linter and formatter
+9. Identify data and infrastructure:
+   - PostgreSQL version if declared
+   - Redis or other cache if present
+   - queue broker if present
+   - object storage if present
+   - search engine if present
+   - Docker Compose, Dockerfiles, CI, deployment, and observability config
+10. Check whether `Docs/`, `docs/`, or equivalent planning folders exist and list their contents.
+11. Find the task checklist file if one exists, commonly `Docs/tasks.md`, `Docs/*Checklist*.md`, `docs/tasks.md`, or similar.
+12. Inspect whether `.agents/settings.json` already exists and preserve the compatible shape if it does.
+13. Inspect whether `.agents/skills/`, `.agents/hooks/`, and `.agents/commands/` already exist.
+14. Confirm the absolute path to the backend directory and the relative path to the frontend directory for hook generation.
+15. Confirm the package manager and workspace command style before writing command prompts.
+
+Every detail must come from what you found. Never use placeholder project names, never copy content from another repository, and never leave unresolved placeholders in generated files.
+
+---
+
+## Canonical Ownership Rules
+
+Each fact has exactly one canonical home. This prevents Codex from spending tokens rediscovering or reconciling duplicated rules.
+
+| Fact | Canonical location |
+|---|---|
+| Cross-cutting project principles | `AGENTS.md` |
+| Cache, Redis, broker, and queue topology | `architecture-deep-dive` skill |
+| Search, vector, semantic, and RAG storage boundaries | `architecture-deep-dive` skill |
+| NestJS module/controller/provider layering | `backend-patterns` skill |
+| Transactional outbox full implementation spec | `backend-patterns` skill |
+| PostgreSQL schema, migration, transaction, and index rules | `database-patterns` skill |
+| API request/response contracts, validation, OpenAPI, and error envelope | `api-contract-guidelines` skill |
+| React frontend conventions | `frontend-guidelines` skill |
+| Lint, typecheck, build, test, and coverage gates | `testing-quality-gates` skill |
+| Docker, deployment, environment, observability, and runtime operations | `deployment-devops-guidelines` skill, only if applicable |
+
+When a skill needs a fact it does not own, include one short pointer sentence:
+
+`See [owning skill] for [topic].`
+
+Do not duplicate the full content.
+
+---
+
+## Required Output Resources
+
+Generate or update the following resources when supported by the current Codex setup:
+
+1. `AGENTS.md`
+2. `.agents/skills/architecture-deep-dive/SKILL.md`
+3. `.agents/skills/backend-patterns/SKILL.md`
+4. `.agents/skills/frontend-guidelines/SKILL.md`
+5. `.agents/skills/database-patterns/SKILL.md`, when database rules are meaningful enough to deserve a separate skill
+6. `.agents/skills/api-contract-guidelines/SKILL.md`, when request/response schemas or OpenAPI contracts are used
+7. `.agents/skills/testing-quality-gates/SKILL.md`, when the repo has meaningful test/lint/type/build workflows
+8. `.agents/skills/deployment-devops-guidelines/SKILL.md`, only when the repo has deployment, Docker, CI, observability, or environment conventions
+9. `.agents/hooks/*`, only if hooks are supported by the repo's Codex settings shape
+10. `.agents/commands/*`, only if repo-local Codex command prompts are supported
+11. `.agents/settings.json`, preserving the existing compatible format if present
+12. `.agents/settings.local.json`, only for user-specific local permissions
+13. `.gitignore` update to ignore `.agents/settings.local.json`
+
+Keep every skill concise and non-duplicative. Do not create a skill just to repeat content already owned by another skill.
+
+---
+
+## File 1: `AGENTS.md`
+
+Maximum 45 lines. This is a routing document, not a knowledge base.
+
+```markdown
+# AGENTS.md
+
+## Project Summary
+[2-4 sentences describing what the system does, who uses it, and its primary domain]
+
+Core goals:
+- [goal]
+- [goal]
+
+Principles:
+- [cross-cutting invariant]
+- [cross-cutting invariant]
+
+## Tech Stack
+Frontend: [exact React framework/tooling and key libraries]
+Backend: [exact NestJS version, Fastify adapter, ORM/query builder, auth, validation]
+Data: [PostgreSQL, cache, queue, search, object storage]
+Infra: [Docker, CI, deployment, observability, package manager]
+
+## Skill Routing
+Use `architecture-deep-dive` for architecture, module boundaries, async workflows, cache/queue topology, search/RAG, storage boundaries, and scalability decisions.
+Use `frontend-guidelines` for all work inside `[frontend_dir]/`, including React, routes, state, forms, styling, mocks, and API clients.
+Use `backend-patterns` for NestJS backend design, modules, controllers, providers, services, repositories, workers, integrations, and Fastify adapter concerns.
+Use `database-patterns` for PostgreSQL schema design, migrations, indexes, transactions, seed data, and query performance.
+Use `api-contract-guidelines` for request/response schemas, validation, OpenAPI, versioning, and error response shape.
+Use `testing-quality-gates` for lint, typecheck, build, tests, coverage, and CI expectations.
+
+## Key Rules
+- [6-10 one-line invariants only]
+- [Detailed skill-owned rules appear here only as short routing hints]
+- [Example: Protected APIs use the project auth guard pattern]
+- [Example: Database mutations go through the detected service/repository pattern]
+- [Example: Heavy tasks run through the detected queue/worker system]
+
+## Code Navigation Policy
+Prefer LSP for `.ts`, `.tsx`, `.js`, and `.jsx` symbol lookup; use Grep only as fallback for config strings, comments, TODOs, and non-symbol literals.
+```
+
+Rules:
+- If `AGENTS.md` already exists, update it instead of duplicating it.
+- Keep it short because Codex will see it frequently.
+- Do not claim libraries that are not installed.
+- Do not mention MSW, i18n, a form library, a UI kit, Redis, BullMQ, Prisma, TypeORM, or OpenAPI unless detected.
+
+---
+
+## File 2: `.agents/skills/architecture-deep-dive/SKILL.md`
+
+```markdown
+---
+name: architecture-deep-dive
+description: Use for system architecture, module boundaries, scalability, cache/queue topology, search/RAG design, storage separation, async workflows, and platform evolution decisions.
+---
+
+# Architecture Deep Dive
+
+Use this skill when the task involves:
+- system or module architecture decisions
+- cross-service or cross-module workflows
+- cache, queue, search, storage, or async processing design
+- multi-tenancy, isolation, audit, or compliance decisions when present
+- scalability thresholds and platform evolution
+
+## Project Architecture Baseline
+
+[1-2 sentences describing the implemented system and core domain]
+
+Core capabilities:
+- [capability]
+- [capability]
+
+Core principle:
+See `AGENTS.md -> Principles` for cross-cutting constraints.
+
+## Core Architecture
+
+### Application Structure
+[Describe discovered frontend/backend/package layout]
+[Describe whether the repo is a monorepo and which tool manages it]
+
+### Transaction System
+Use PostgreSQL as the source of truth for:
+- [data category]
+- [data category]
+
+### Module Boundaries
+[Describe the discovered NestJS module structure and major domain boundaries]
+[Describe how the React app is organized at a high level]
+
+### Search / Retrieval System
+[Describe the discovered search backend, indexing strategy, and scoring approach]
+[If no search exists, state that no dedicated search system is implemented]
+[State clearly where vector or semantic storage lives if implemented; this is the only canonical statement]
+
+### AI / Semantic Layer
+[Describe implemented AI or embedding flows only if present]
+[Do not restate the storage-separation rule if already stated in Search / Retrieval System]
+
+### Object Storage
+Use [S3/MinIO/Azure Blob/local storage/etc.] for: [asset types]
+[If absent, say no object storage integration is implemented]
+
+### Cache / Queue
+[THIS IS THE CANONICAL LOCATION FOR CACHE, REDIS, BROKER, AND QUEUE TOPOLOGY]
+Use [Redis/equivalent] with [N] dedicated slots/instances/queues:
+- `[slot or queue name]` - [purpose, TTL, retry, concurrency, key pattern]
+- `[slot or queue name]` - [purpose, TTL, retry, concurrency, key pattern]
+
+Do not mix queue transport, task results, application cache, and session state unless the project intentionally does so and documents why.
+
+### Event / Async Layer
+[Describe implemented async/event/workflow system]
+[If a transactional outbox exists or is required, say the full implementation spec lives in `backend-patterns`]
+
+## Architecture Principles
+
+### [Principle name]
+[Rule plus brief rationale]
+
+### [Principle name]
+[Rule plus brief rationale]
+
+## Preferred Patterns
+
+### [Pattern name]
+[Short project-specific description]
+
+## Canonical Workflows
+
+### [Workflow 1]
+[Step 1] -> [Step 2] -> [Step 3]
+
+### [Workflow 2]
+[Step 1] -> [Step 2] -> [Step 3]
+
+## Scalability Thresholds
+
+[When each component should evolve; use real thresholds if present, otherwise describe qualitative triggers]
+
+## When Giving Architecture Advice
+
+Always:
+- distinguish what is implemented today from what is planned in docs
+- preserve the discovered module, database, and async boundaries
+- recommend the simplest viable change before larger platform evolution
+- reference the canonical skill for implementation details rather than repeating it
+
+## Output Style
+
+Prefer module breakdowns, component interactions, sequence steps, tradeoffs, risks, and recommendations grounded in the current repo.
+```
+
+---
+
+## File 3: `.agents/skills/backend-patterns/SKILL.md`
+
+This skill must target the discovered NestJS backend and its Fastify adapter setup.
+
+Do not write FastAPI, Pydantic, SQLAlchemy, Alembic, Celery, Ruff, pytest, mypy, or Python-specific guidance unless those tools actually exist in the repo.
+
+```markdown
+---
+name: backend-patterns
+description: Use for NestJS backend design, Fastify adapter concerns, modules, controllers, providers, services, repositories, workers, queues, integrations, and backend implementation.
+---
+
+# Backend Patterns
+
+Use this skill when the task involves:
+- NestJS module, controller, provider, guard, interceptor, filter, or pipe design
+- service and repository/data-access boundaries
+- PostgreSQL access and transaction orchestration
+- request validation and DTO design
+- authentication, authorization, and audit logging
+- background jobs, queues, scheduled tasks, or integration adapters
+- Fastify adapter behavior and platform-specific request/reply details
+
+## Backend Baseline
+
+Preferred stack discovered in this repo:
+- NestJS: [version]
+- HTTP platform: [@nestjs/platform-fastify version and bootstrap location]
+- Database access: [Prisma/TypeORM/Drizzle/Knex/node-postgres/etc.]
+- Validation: [class-validator/class-transformer/Zod/TypeBox/Joi/etc.]
+- Auth: [Passport/JWT/session/OIDC/custom/etc.]
+- Cache: [Redis/cache-manager/none]
+- Queue/worker: [BullMQ/Bull/pg-boss/Temporal/SQS/none]
+- Tests: [Jest/Vitest/Node test runner/etc.]
+
+## Backend Architecture Rule
+
+Follow the discovered NestJS layering. If the repo already has a clear pattern, preserve it.
+
+Default layering when compatible with the repo:
+1. Module layer - `[modules_path]` - groups domain providers, controllers, imports, and exports
+2. Controller layer - `[controllers_path]` - HTTP concerns only: route decorators, guards, pipes, request DTOs, response mapping
+3. Service layer - `[services_path]` - business logic, orchestration, transactions, state changes, side effects
+4. Repository/data-access layer - `[repositories_path]` - database query construction and persistence
+5. Model/entity/schema layer - `[models_path]` - ORM models, entities, Prisma schema, Drizzle schema, or table definitions
+
+Controller -> Service -> Repository/Data Access -> Database.
+No layer imports from a layer above it.
+
+## NestJS Module Rules
+
+- Keep each domain inside the discovered module structure.
+- Export only providers that other modules actually need.
+- Prefer dependency injection over manually instantiating services, repositories, clients, or queues.
+- Keep module registration explicit and aligned with existing `imports`, `providers`, `controllers`, and `exports`.
+- Use dynamic modules only when configuration or external integration setup requires them.
+
+## Controller Rules
+
+- Controllers own HTTP decorators, route paths, guards, pipes, interceptors, status codes, and request/response mapping.
+- Controllers call services and avoid business logic.
+- Controllers do not perform direct database calls.
+- Controllers do not enqueue jobs directly unless the repo already uses controllers as orchestration boundaries; otherwise queue handoff belongs in services or outbox workers.
+- Use the project's discovered auth guard and role/permission pattern.
+- Use explicit response status decorators or Fastify reply behavior only when consistent with existing code.
+- Avoid leaking ORM entities directly if the project uses response DTOs or serializers.
+
+## Fastify Adapter Rules
+
+- Bootstrap must use the discovered Fastify adapter pattern, such as `NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(...))`.
+- Use Fastify-specific request/reply types only where the existing project needs platform-specific behavior.
+- Do not introduce Express middleware, Express request types, or Express-only libraries unless the project already bridges them intentionally.
+- Prefer NestJS guards, pipes, filters, and interceptors before raw Fastify hooks unless the repo already centralizes behavior in Fastify plugins.
+- When adding file upload, cookies, compression, CORS, helmet, or multipart behavior, use packages compatible with NestJS on Fastify and verify registration order.
+
+## DTO / Validation Rules
+
+- Use the validation style already installed and used by the repo.
+- If using `class-validator`, keep DTOs explicit and ensure `ValidationPipe` settings are respected.
+- If using Zod/TypeBox/Joi, keep request and response schemas close to the existing contract pattern.
+- Do not claim runtime validation exists unless configured.
+- Keep internal persistence fields out of public response DTOs.
+
+## Service Layer Rules
+
+- Services own business rules, orchestration, workflow transitions, transaction boundaries, and integration handoffs.
+- Services receive dependencies through NestJS dependency injection.
+- Services delegate database query construction to repositories/data-access providers when that pattern exists or is introduced for new domains.
+- Services may coordinate multiple repositories inside one transaction using the detected transaction API.
+- Services should raise domain/application errors that are mapped by filters or controller-level handling according to the repo pattern.
+- Services should not contain HTTP decorator logic, raw request parsing, or response-shaping code beyond domain return values.
+
+## Repository / Data-Access Rules
+
+- Use the detected data-access style:
+  - Prisma: repositories receive `PrismaClient` or transaction client through an injected database service
+  - TypeORM: repositories use injected `Repository<T>`, `DataSource`, or transaction manager
+  - Drizzle: repositories receive the Drizzle database or transaction object
+  - Knex/node-postgres: repositories receive the Knex instance, transaction, pool, or client
+- Repositories own query construction, filters, joins, pagination, aggregates, persistence helpers, and result mapping.
+- Repositories contain no business workflow decisions, authorization decisions, queue dispatch, or HTTP concerns.
+- Repositories return typed entities, DTO-ready objects, scalars, `null`, or empty arrays according to the repo's established style.
+- Keep transactions opened by services or unit-of-work helpers, not hidden inside low-level repository calls unless the repo's pattern does that deliberately.
+
+Canonical signatures should be adapted to the detected database tool:
+
+```typescript
+async findById(dbOrTx: DbOrTx, id: string): Promise<Entity | null>
+async list(dbOrTx: DbOrTx, filters: ListFilters): Promise<Entity[]>
+async create(dbOrTx: DbOrTx, input: CreateInput): Promise<Entity>
+async update(dbOrTx: DbOrTx, id: string, input: UpdateInput): Promise<Entity>
+async delete(dbOrTx: DbOrTx, id: string): Promise<void>
+```
+
+## Async / Background Rules
+
+Use background workers for: [heavy tasks detected in the repo]
+Do not block request/response cycles with long-running CPU, IO, reporting, notification, import/export, OCR, AI, or webhook work.
+
+Typical pattern:
+1. Controller accepts and validates request
+2. Service persists initial state in PostgreSQL
+3. Service writes an outbox row or enqueues work according to the detected architecture
+4. API returns status or job-tracking response
+5. Worker processes the side effect and updates state or audit logs
+
+See `architecture-deep-dive` for canonical queue names, cache slots, concurrency, retry, and broker topology.
+
+## Transactional Outbox Pattern
+
+[THIS IS THE CANONICAL LOCATION FOR THE FULL OUTBOX SPEC, BUT ONLY INCLUDE IT IF THE PROJECT USES OR REQUIRES AN OUTBOX]
+
+All domain events ([event types]) must:
+1. Write an `[outbox_table]` row in the same PostgreSQL transaction as the state change
+2. Avoid dispatching queue jobs directly from controllers
+3. Let the outbox publisher move events from `PENDING` to `PUBLISHED`, `FAILED`, or `DEAD_LETTER`
+
+Outbox publisher:
+- location: `[worker_file_path]`
+- schedule: `[scheduler or queue trigger]`
+- batch size: `[N]`
+- retry policy: `[retry policy]`
+
+If the repo does not implement an outbox, do not invent one unless the generated guidance is explicitly for future architecture.
+
+## Security Rules
+
+- Use the discovered authentication guard, authorization decorator, and role/permission pattern.
+- Preserve tenant, organization, account, or user scoping if implemented.
+- Never log secrets, tokens, passwords, or sensitive PII.
+- Keep audit logging in the service or persistence layer according to the existing pattern.
+
+## Performance Rules
+
+- Avoid synchronous blocking work in request handlers.
+- Use pagination for large collections.
+- Prevent N+1 query patterns using the detected ORM/query builder's relation loading strategy.
+- Keep transactions short and scoped to required atomic changes.
+- Cache only derived or read-heavy data, not transactional truth.
+
+## Error Handling Rules
+
+- Use the project's global exception filter or error mapping strategy.
+- Keep error responses consistent with `api-contract-guidelines`.
+- Background job failures should be retried, dead-lettered, or surfaced through the repo's existing observability path.
+```
+
+---
+
+## File 4: `.agents/skills/frontend-guidelines/SKILL.md`
+
+```markdown
+---
+name: frontend-guidelines
+description: Use for all work inside `[frontend_dir]/`, including React, TypeScript, routing, state, data fetching, forms, styling, mocks, API clients, and UI task execution.
+---
+
+# Frontend Guidelines
+
+Use this skill when the task involves:
+- React pages, routes, layouts, or feature views
+- reusable components
+- forms and validation
+- client state and server state
+- API clients and generated types
+- mock/demo behavior
+- styling and responsive UI
+
+## Scope Rules
+
+- All frontend work must stay inside `[frontend_dir]/` unless updating root-level docs or shared generated API types.
+- Use the existing module structure and naming conventions.
+- Do not introduce a new UI, form, validation, routing, data-fetching, or state library without explicit user approval.
+
+## Frontend Stack
+
+- React: [version]
+- Build/runtime framework: [Vite/Next.js/Remix/etc.]
+- Router: [library]
+- Data fetching: [TanStack Query/SWR/Apollo/etc.]
+- State: [Zustand/Redux/Jotai/Context/etc.]
+- Forms: [React Hook Form/Formik/none]
+- Validation: [Zod/Yup/Valibot/none]
+- Styling: [Tailwind/CSS modules/styled-components/etc.]
+- UI library: [library/none]
+- Mocks/demo: [MSW/custom fixtures/none]
+- i18n: [library/none]
+
+## Import Rules
+
+- Use the detected path aliases when available.
+- Avoid deep relative imports across feature boundaries.
+- Keep shared API types in the existing shared or generated type location.
+
+## UI Design Rules
+
+- Follow the project's existing component and styling conventions.
+- Keep operational tools dense, scannable, and predictable.
+- Use icons, menus, tabs, inputs, toggles, segmented controls, and tooltips according to the existing design system.
+- Do not create marketing-style landing pages when the requested output is an app screen or tool.
+
+## Component Rules
+
+- Use the existing file naming convention.
+- Keep components presentation-focused.
+- Put business rules in hooks, API clients, or domain helpers according to the existing pattern.
+- Avoid direct API calls from presentational components.
+- Type props explicitly.
+
+## Data Fetching Rules
+
+- API calls go through the detected API client layer.
+- Use the detected server-state library for fetching, caching, invalidation, and mutations.
+- Do not move server state into a client state store when the data-fetching library is the correct tool.
+- Align request and response types with `api-contract-guidelines`.
+
+## Forms Rules
+
+- Use the detected form and validation libraries.
+- Keep validation schemas explicit.
+- Surface validation errors in the project's existing UI pattern.
+- Do not claim form tooling exists if it is not installed.
+
+## Mock / Demo Mode Rules
+
+When `[DEMO_ENV_VAR]=true`:
+- use the detected mock/demo mechanism
+- match the real API contract shape
+- include realistic fixture data
+- keep mock behavior isolated from production code paths
+
+If no mock/demo mechanism exists, do not invent one unless the user asks.
+
+## Source of Truth
+
+- `[tasks_file]` - implementation checklist when present
+- `[api_contract_source]` - API contract source when present
+- `api-contract-guidelines` - request/response contract rules
+
+## Directory Guidance
+
+Adapt this to the discovered project structure:
+- routes/pages -> `[routes_path]`
+- reusable UI -> `[components_path]`
+- feature modules -> `[features_path]`
+- data hooks -> `[hooks_path]`
+- API helpers -> `[api_client_path]`
+- shared types -> `[types_path]`
+- mocks -> `[mocks_path]`
+
+## When Generating Frontend Output
+
+Prefer exact file paths, typed props, production-usable code, accessible UI states, and short placement explanations.
+
+## Avoid
+
+- direct API calls from presentational components
+- uninstalled libraries
+- one-off styling patterns that conflict with the existing system
+- broad refactors unrelated to the requested change
+```
+
+---
+
+## File 5: `.agents/skills/database-patterns/SKILL.md`
+
+Generate this file when the project has PostgreSQL schema design, migrations, indexes, seed data, or transaction guidance that would otherwise bloat `backend-patterns`.
+
+```markdown
+---
+name: database-patterns
+description: Use for PostgreSQL schema design, migrations, transaction patterns, ORM schema authoring, indexes, constraints, seed data, and query optimization.
+---
+
+# Database Patterns
+
+Use this skill when the task involves:
+- adding or modifying database models, tables, entities, or schema definitions
+- creating, reviewing, or applying migrations
+- designing indexes, constraints, enums, or relations
+- transaction strategy
+- tenant, organization, or account scoping in the database
+- seed data, fixtures, or test database setup
+- query performance and explain-plan review
+
+## Database Baseline
+
+- Database: PostgreSQL [version if detected]
+- Database access: [Prisma/TypeORM/Drizzle/Knex/node-postgres/etc.]
+- Migration tool: [tool and version]
+- Schema source: `[models_path]`
+- Migration directory: `[migration_dir]`
+- Seed scripts: `[seed_path]`
+
+## Schema Rules
+
+- Follow the detected naming convention for tables, columns, enums, indexes, and constraints.
+- Preserve existing ID strategy such as UUID, cuid, serial, identity, or natural keys.
+- Use explicit foreign keys and indexes when the current schema does.
+- Add nullable columns, defaults, and backfills safely.
+- Do not introduce destructive schema changes without an explicit migration plan.
+
+## Migration Rules
+
+- Generate migrations with `[migration_tool]` using the detected command.
+- Review generated SQL or migration code before applying.
+- Watch for destructive operations such as dropping columns, recreating tables, or changing enum values.
+- Prefer expand/backfill/contract patterns for production data changes.
+- Verify migration status after applying.
+
+## Transaction Rules
+
+- Services or unit-of-work helpers own transaction boundaries.
+- Repositories receive the transaction object or manager when participating in a transaction.
+- Keep transactions short and avoid network calls inside transactions.
+- Use PostgreSQL constraints to protect invariants that must hold under concurrency.
+
+## Query Rules
+
+- Use cursor pagination for large datasets when supported by the project.
+- Add indexes for common filters, joins, and ordering fields.
+- Avoid N+1 queries using the ORM/query builder's recommended relation loading strategy.
+- Use raw SQL only when the ORM/query builder cannot express the query clearly or efficiently.
+
+## Multi-Tenancy / Scoping
+
+[Describe schema-per-tenant, row-level security, tenant_id scoping, separate databases, or none]
+[This is the canonical database-specific statement if implemented]
+
+## Verification
+
+Run:
+```bash
+[migration_status_cmd]
+[schema_validate_cmd]
+[test_cmd] [database_test_scope]
+```
+```
+
+---
+
+## File 6: `.agents/skills/api-contract-guidelines/SKILL.md`
+
+Generate this file when the backend has explicit request/response DTOs, schemas, OpenAPI, generated clients, or contract tests.
+
+```markdown
+---
+name: api-contract-guidelines
+description: Use for API request/response contracts, DTOs, validation, OpenAPI, generated clients, error envelopes, versioning, and frontend/backend type alignment.
+---
+
+# API Contract Guidelines
+
+Use this skill when the task involves:
+- adding or changing API endpoints
+- request DTOs, response DTOs, validators, or schemas
+- OpenAPI/Swagger generation
+- generated frontend clients or shared types
+- error response shape
+- API versioning
+- contract tests
+
+## Contract Baseline
+
+- Backend framework: NestJS on Fastify
+- Validation: [class-validator/Zod/TypeBox/Joi/etc.]
+- API documentation: [Swagger/OpenAPI/none]
+- Generated clients/types: [tool/path/none]
+- Error envelope: `[error_shape]`
+
+## Request Rules
+
+- Define request body, params, and query contracts with the detected DTO/schema pattern.
+- Reject unknown fields when the project validation settings support it.
+- Keep coercion and transformation behavior explicit.
+- Validate IDs, dates, enums, pagination, and filters consistently.
+
+## Response Rules
+
+- Return stable response shapes.
+- Do not leak persistence-only fields.
+- Use explicit response DTOs, serializers, or schemas when the repo already does.
+- Keep list responses and pagination metadata consistent.
+
+## Error Rules
+
+- Use the discovered error envelope and exception mapping.
+- Keep validation errors structured.
+- Do not return raw ORM, database, or queue errors to clients.
+
+## OpenAPI / Client Generation Rules
+
+- Update OpenAPI decorators or schema registration when endpoint contracts change.
+- Regenerate clients or shared types using the detected command.
+- Keep frontend API clients aligned with generated or shared types.
+
+## Versioning Rules
+
+[Describe URI/header/media-type/versioning strategy if present]
+[If no versioning exists, state that no API versioning convention is implemented]
+
+## Verification
+
+Run:
+```bash
+[api_contract_check_cmd]
+[type_checker_cmd]
+[test_cmd] [contract_test_scope]
+```
+```
+
+---
+
+## File 7: `.agents/skills/testing-quality-gates/SKILL.md`
+
+Generate this file when the repo has lint, typecheck, build, test, coverage, CI, or quality gate conventions.
+
+```markdown
+---
+name: testing-quality-gates
+description: Use for linting, formatting, type checking, builds, unit tests, integration tests, e2e tests, coverage, CI, and verification strategy.
+---
+
+# Testing Quality Gates
+
+Use this skill when the task involves:
+- choosing or running tests
+- fixing lint, format, or type errors
+- adding unit, integration, e2e, or contract tests
+- verifying migrations or database behavior
+- CI failures
+- release readiness
+
+## Tooling Baseline
+
+- Package manager: [npm/pnpm/yarn/bun]
+- Linter: [ESLint/Biome/Oxlint/none]
+- Formatter: [Prettier/Biome/none]
+- Type checker: [tsc command]
+- Backend test runner: [Jest/Vitest/etc.]
+- Frontend test runner: [Vitest/Jest/Testing Library/etc.]
+- E2E runner: [Playwright/Cypress/etc.]
+- Build commands: [frontend/backend/root]
+
+## Default Verification Order
+
+1. Run the narrowest relevant test or checker for the edited files.
+2. Run lint and typecheck for the affected package.
+3. Run the relevant package test suite.
+4. Run build when public contracts, routing, bundling, or deployment-sensitive files changed.
+
+## Test Placement Rules
+
+- Follow the discovered test directory and naming convention.
+- Put backend tests near the module or in the existing test tree.
+- Put frontend component tests near the component or in the existing test tree.
+- Prefer integration tests for controller/service/database behavior when the repo already supports a test database.
+
+## Quality Gate Commands
+
+```bash
+[linter_cmd]
+[linter_autofix_cmd]
+[type_checker_cmd]
+[test_cmd]
+[frontend_build_cmd]
+[backend_build_cmd]
+```
+
+## Failure Handling
+
+- Rerun the specific failing test before rerunning the full suite.
+- Use LSP hover, definitions, references, and diagnostics before changing types broadly.
+- Avoid suppressing lint or type errors unless there is a documented reason.
+```
+
+---
+
+## File 8: `.agents/skills/deployment-devops-guidelines/SKILL.md`
+
+Generate this file only when deployment, Docker, CI, runtime environment, observability, or infrastructure files exist.
+
+```markdown
+---
+name: deployment-devops-guidelines
+description: Use for Docker, Compose, CI, deployment, environment variables, secrets, observability, release checks, and runtime operations.
+---
+
+# Deployment DevOps Guidelines
+
+Use this skill when the task involves:
+- Dockerfiles or Docker Compose
+- CI/CD workflows
+- environment variables and secrets
+- deployment manifests
+- logging, metrics, tracing, or health checks
+- production migration strategy
+- release or rollback planning
+
+## Runtime Baseline
+
+- Local runtime: [Docker Compose/host scripts/dev containers/etc.]
+- Backend service: `[backend_service_name]`
+- Frontend service: `[frontend_service_name]`
+- PostgreSQL service: `[postgres_service_name]`
+- Redis/cache service: `[redis_service_name]`
+- Observability: [Prometheus/Grafana/OpenTelemetry/Sentry/etc.]
+
+## Environment Rules
+
+- Never commit real secrets.
+- Keep `.env.example` aligned with required variables.
+- Document new environment variables in the repo's existing location.
+- Preserve environment variable names used by deployment and CI.
+
+## Docker / Compose Rules
+
+- Use the detected service names in commands.
+- Prefer `docker compose exec` for running commands in existing containers.
+- Prefer `docker compose run --rm` for one-off commands when that is the repo pattern.
+- Do not rebuild or restart unrelated services unless required.
+
+## Deployment Rules
+
+- Run migrations using the production-safe migration command.
+- Build frontend and backend using the detected build commands.
+- Verify health checks after service changes.
+
+## Verification
+
+```bash
+[docker_status_cmd]
+[backend_health_cmd]
+[frontend_build_cmd]
+[backend_build_cmd]
+```
+```
+
+---
+
+## Hooks
+
+Create hooks only if the current Codex setup supports them and `.agents/settings.json` has a compatible hook format.
+
+Hooks must be lightweight because they run often. Prefer advisory hooks unless the project has fast, reliable checks.
+
+### Hook 1: `.agents/hooks/prefer_lsp.py`
+
+Use this PreToolUse hook to block broad grep/search tool use when the query targets typed source files. Codex should use LSP first for symbol navigation, then use targeted search only for config strings, comments, TODOs, and non-symbol literals.
+
+```python
+#!/usr/bin/env python3
+import json
+import sys
+
+data = json.load(sys.stdin)
+tool_input = data.get("tool_input", {}) or {}
+
+candidates = []
+for key in ("path", "paths", "glob", "pattern", "query", "include"):
+    value = tool_input.get(key)
+    if isinstance(value, str):
+        candidates.append(value)
+    elif isinstance(value, list):
+        candidates.extend(str(v) for v in value)
+
+text = " ".join(candidates).lower()
+
+lsp_exts = (".ts", ".tsx", ".js", ".jsx")
+
+if any(ext in text for ext in lsp_exts):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": (
+                "For typed JavaScript/TypeScript navigation, use LSP before Grep. "
+                "Prefer definitions, references, symbols, hover/type info, and diagnostics. "
+                "Use Grep for config strings, comments, TODOs, and non-symbol literals."
+            )
+        }
+    }))
+
+sys.exit(0)
+```
+
+Include `.py` only if Python is actually present as application code.
+
+### Hook 2: `.agents/hooks/ts-diagnostics.py`
+
+Prefer a Python hook for cross-platform Windows compatibility. The hook should:
+- read Codex tool JSON from stdin
+- inspect edited file path
+- run the detected TypeScript diagnostics command for the relevant package
+- cap output to a small number of lines
+- exit non-zero only when the project wants hard diagnostic failures
+
+Template:
+
+```python
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_DIR = ROOT / "[frontend_dir]"
+BACKEND_DIR = ROOT / "[backend_dir]"
+
+FRONTEND_TYPECHECK = [[frontend_typecheck_argv]]
+BACKEND_TYPECHECK = [[backend_typecheck_argv]]
+
+def main() -> int:
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        return 0
+
+    file_path = (
+        data.get("tool_input", {}).get("file_path")
+        or data.get("tool_input", {}).get("path")
+        or ""
+    )
+    if not file_path.endswith((".ts", ".tsx")):
+        return 0
+
+    path = Path(file_path)
+    abs_path = path if path.is_absolute() else ROOT / path
+
+    if FRONTEND_DIR in abs_path.parents or abs_path == FRONTEND_DIR:
+        cwd = FRONTEND_DIR
+        cmd = FRONTEND_TYPECHECK
+    elif BACKEND_DIR in abs_path.parents or abs_path == BACKEND_DIR:
+        cwd = BACKEND_DIR
+        cmd = BACKEND_TYPECHECK
+    else:
+        return 0
+
+    if not cwd.exists():
+        return 0
+
+    result = subprocess.run(cmd, cwd=str(cwd), text=True, capture_output=True)
+    if result.returncode == 0:
+        return 0
+
+    output = (result.stdout + "\n" + result.stderr).strip().splitlines()
+    print(f"TypeScript diagnostics failed after editing: {file_path}")
+    print("\n".join(output[-80:]))
+    return 2
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+Replace `[frontend_typecheck_argv]` and `[backend_typecheck_argv]` with Python argv list contents, not shell strings. For example: `"pnpm", "--filter", "web", "run", "typecheck"`.
+
+If the project has a root workspace typecheck command that is fast enough, use that instead of package-specific commands.
+
+### Hook 3: `.agents/hooks/lint-check.py`
+
+Use a PostToolUse hook after `.ts`, `.tsx`, `.js`, or `.jsx` edits if the repo has a fast linter.
+
+The hook should:
+- detect whether the edited file is frontend or backend
+- run the detected lint command for the affected package
+- cap output
+- usually exit 0 if advisory, unless the team wants blocking lint hooks
+
+Do not generate Ruff, mypy, pyright, or Python lint hooks unless Python tooling is detected.
+
+### Hook 4: Optional database schema validation
+
+Generate only if the migration/ORM tool supports a fast validate command:
+- Prisma: `prisma validate`
+- Drizzle: `drizzle-kit check` or detected equivalent
+- TypeORM: detected migration/check command if available
+
+Run only after schema files change.
+
+---
+
+## Commands
+
+Generate repo-local command prompts in `.agents/commands/` only if Codex supports them in this project.
+
+Recommended commands:
+- `fix-error.md`
+- `impl-phase.md`
+- `lint-fix.md`
+- `migrate.md`
+- `new-component.md`
+- `new-endpoint.md`
+- `phase-status.md`
+- `run-tests.md`
+- `session-end.md`
+- `update-checklist.md`
+
+For every command:
+- replace every placeholder with actual project-specific values
+- verify referenced paths exist before writing
+- keep prompts concise and action-oriented
+- default to LSP-driven navigation
+- never mention `.claude/`
+- never mention another project
+- do not include Docker and host command variants unless both are genuinely supported
+
+### Placeholder Replacement Table
+
+| Placeholder | Replace with |
+|---|---|
+| `[project_name]` | actual project name |
+| `[frontend_dir]` | actual React app path |
+| `[backend_dir]` | actual NestJS app path |
+| `[modules_path]` | NestJS module pattern or nearest equivalent |
+| `[controllers_path]` | controller file pattern or nearest equivalent |
+| `[models_path]` | ORM model/entity/schema path or nearest equivalent |
+| `[schemas_path]` | DTO/schema path or nearest equivalent |
+| `[services_path]` | service provider path or nearest equivalent |
+| `[repositories_path]` | repository/data-access path or nearest equivalent |
+| `[endpoints_path]` | controller/module route path or nearest equivalent |
+| `[workers_path]` | worker/processor/job path if any |
+| `[routes_index]` | module/router registration path if any |
+| `[migration_tool]` | actual migration tool |
+| `[migration_create_cmd]` | actual migration creation command |
+| `[migration_apply_cmd]` | actual migration apply command |
+| `[migration_status_cmd]` | actual migration status command |
+| `[migration_dir]` | actual migration directory |
+| `[schema_validate_cmd]` | actual schema validation command if any |
+| `[linter_cmd]` | lint check command |
+| `[linter_autofix_cmd]` | lint autofix command |
+| `[formatter_cmd]` | formatter command if any |
+| `[type_checker_cmd]` | typecheck command |
+| `[test_cmd]` | test command in detected execution mode |
+| `[test_dir]` | test directory path |
+| `[frontend_build_cmd]` | frontend build command |
+| `[backend_build_cmd]` | backend build command |
+| `[tasks_file]` | checklist file path |
+| `[checklist_file]` | git-committed checklist file for staging |
+| `[api_contract_check_cmd]` | OpenAPI/client/contract check command if any |
+
+### `fix-error.md`
+
+```markdown
+# /fix-error
+
+Efficiently diagnose and fix a specific error without reading unrelated code.
+
+## Argument
+Paste the error, stack trace, failing test output, or build diagnostic after the command.
+
+## Instructions
+
+1. Parse the error:
+   - exact file and line number
+   - error type and message
+   - failing symbol
+   - package or app affected
+   - chained cause if present
+
+2. Read only what is needed:
+   - small window around the failing line
+   - LSP hover/type info for the failing symbol
+   - LSP definition/references only when the error depends on declarations or shared utilities
+   - last stack frame belonging to this project when the trace includes dependencies
+
+3. Fix the root cause with the minimal safe change.
+
+4. Verify with the narrowest relevant command:
+   ```bash
+   [test_cmd] <specific_test_or_file>
+   ```
+
+5. Report what was wrong, what changed, and the file:line reference.
+```
+
+### `impl-phase.md`
+
+```markdown
+# /impl-phase
+
+Implement the next incomplete phase of [project_name], following the project checklist exactly.
+
+## Argument
+Pass the phase number: `/impl-phase 3`.
+If no argument is given, detect the next incomplete phase from `[tasks_file]`.
+
+## Instructions
+
+1. Scope:
+   - read only the relevant phase section from `[tasks_file]`
+   - use `AGENTS.md` and applicable `.agents/skills/*` files for architecture and coding rules
+   - do not re-read the full implementation plan unless the phase section explicitly requires it
+
+2. Navigate with symbols first:
+   - use LSP definitions/references for modules, controllers, DTOs, services, repositories, entities, and shared utilities
+   - use targeted file reads only for known sections
+   - use search only for config strings, comments, TODOs, and non-symbol literals
+
+3. Backend implementation order when applicable:
+   1. Database model/entity/schema -> `[models_path]`
+   2. Migration -> create, review, apply if safe
+   3. DTO/schema/validator -> `[schemas_path]`
+   4. Repository/data-access -> `[repositories_path]`
+   5. Service/provider -> `[services_path]`
+   6. Controller -> `[controllers_path]`
+   7. Module registration -> `[modules_path]`
+   8. Worker/processor/job -> `[workers_path]` if async work is involved
+
+4. Frontend implementation order when applicable:
+   1. API type/client update
+   2. data hook or mutation
+   3. component/page
+   4. route registration
+   5. focused tests
+
+5. Quality gates:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   ```
+
+6. Tests:
+   ```bash
+   [test_cmd]
+   ```
+
+7. Update checklist:
+   - mark only verified completed items `[x]`
+   - preserve the checklist's existing format
+
+## Safety rules
+- Do not re-read files you just edited.
+- Batch related edits where safe.
+- Stop before destructive database or filesystem operations.
+```
+
+### `new-endpoint.md`
+
+```markdown
+# /new-endpoint
+
+Add a new NestJS API endpoint following the [project_name] backend pattern.
+
+## Argument
+`/new-endpoint <domain> <HTTP-verb> <resource>`
+
+## Instructions
+
+1. Find the nearest existing controller/module for the same domain or style.
+2. Use LSP definitions/references to confirm:
+   - module imports/providers/controllers
+   - DTO/validation pattern
+   - auth guard and role/permission pattern
+   - service and repository pattern
+   - response/error pattern
+3. Add or update DTO/schema types in `[schemas_path]`.
+4. Add repository/data-access functions in `[repositories_path]` if the endpoint touches PostgreSQL.
+5. Add service logic in `[services_path]`.
+6. Add controller method in `[controllers_path]`.
+7. Register or export providers in `[modules_path]` if needed.
+8. Add or update focused tests in `[test_dir]`.
+9. Run:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   [test_cmd] <specific_endpoint_test_if_available>
+   ```
+
+## Constraints
+- Preserve the NestJS Fastify adapter setup.
+- Do not introduce Express-only APIs.
+- Keep controllers thin.
+- Preserve authentication, authorization, tenant/org/user scoping, and audit rules.
+- Report only schema, repository, service, controller, module, and test locations changed.
+```
+
+### `new-component.md`
+
+```markdown
+# /new-component
+
+Add a React component following the [project_name] frontend pattern.
+
+## Argument
+`/new-component <domain> <ComponentName>`
+
+## Instructions
+
+1. Find the nearest existing feature component.
+2. Use LSP definitions to confirm imports, props, styling, and API hook patterns.
+3. Create the component in the discovered feature/component location.
+4. Add data hook, API client, route, or tests only when needed.
+5. Keep presentation components free of direct API calls.
+6. Run:
+   ```bash
+   [type_checker_cmd]
+   [test_cmd] <specific_frontend_test_if_available>
+   ```
+
+## Constraints
+- Use installed UI, styling, form, and validation libraries only.
+- Match the existing responsive and accessibility patterns.
+- Report files created or changed.
+```
+
+### `migrate.md`
+
+```markdown
+# /migrate
+
+Create, review, and apply a PostgreSQL migration using `[migration_tool]`.
+
+## Argument
+Pass migration name: `/migrate <name>`.
+
+## Instructions
+
+1. Check current migration state:
+   ```bash
+   [migration_status_cmd]
+   ```
+
+2. Validate schema if supported:
+   ```bash
+   [schema_validate_cmd]
+   ```
+
+3. Create the migration:
+   ```bash
+   [migration_create_cmd] <name>
+   ```
+
+4. Review the generated migration in `[migration_dir]`:
+   - confirm it matches the intended model changes
+   - check for destructive operations
+   - verify indexes, constraints, defaults, and foreign keys
+   - confirm rollback/downgrade behavior when the tool supports it
+
+5. Apply the migration only if safe:
+   ```bash
+   [migration_apply_cmd]
+   ```
+
+6. Verify final state:
+   ```bash
+   [migration_status_cmd]
+   ```
+
+7. If migration fails, fix the schema or migration and rerun the workflow. Do not edit the database manually.
+```
+
+### `run-tests.md`
+
+```markdown
+# /run-tests
+
+Run the [project_name] test suite in the detected execution mode.
+
+## Argument
+Optional: `/run-tests unit`, `/run-tests integration`, `/run-tests e2e`, `/run-tests all`, or a specific test path.
+
+## Instructions
+
+1. Use the detected test command:
+   ```bash
+   [test_cmd]
+   ```
+
+2. If Docker Compose is the detected execution mode:
+   - check the service is running with the detected service name
+   - start only the required service if needed
+   - run tests inside the container
+
+3. If a specific test fails:
+   - read only the failing test and target module
+   - fix the root cause
+   - rerun the specific failing test before the full suite
+
+4. Report pass/fail count, skipped tests, and any remaining failure with file:line.
+```
+
+### `lint-fix.md`
+
+```markdown
+# /lint-fix
+
+Run linting and type checks, then fix all issues found.
+
+## Instructions
+
+1. Auto-fix safe lint issues:
+   ```bash
+   [linter_autofix_cmd]
+   ```
+
+2. Run type checker:
+   ```bash
+   [type_checker_cmd]
+   ```
+
+3. Fix remaining issues manually:
+   - use LSP hover/type info before adding annotations or changing signatures
+   - prefer established patterns over broad rewrites
+   - do not suppress warnings unless there is a documented reason
+
+4. Confirm clean:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   ```
+
+5. Report the count fixed and any remaining issue with file:line.
+```
+
+### `phase-status.md`
+
+```markdown
+# /phase-status
+
+Show the current phase and exact next tasks.
+
+## Instructions
+
+1. Read `[tasks_file]`.
+2. Focus on the first incomplete phase or the phase requested by the user.
+3. List unchecked `[ ]` items grouped by section.
+4. Identify work that can run in parallel and work that is sequential.
+5. Output a prioritized work order.
+
+Constraints:
+- Do not implement anything.
+- Keep output under 40 lines.
+- Include file/path references only when present in the checklist or obvious from project structure.
+```
+
+### `update-checklist.md`
+
+```markdown
+# /update-checklist
+
+Verify and mark completed tasks in the checklist.
+
+## Argument
+Pass phase number: `/update-checklist 3`.
+
+## Instructions
+
+1. Read only the relevant phase section from `[tasks_file]`.
+2. For each unchecked task, verify completion through code evidence:
+   - model/entity/schema exists in `[models_path]`
+   - DTO/schema exists in `[schemas_path]`
+   - repository/data-access functions exist in `[repositories_path]`
+   - service/provider functions exist in `[services_path]`
+   - controller methods exist in `[controllers_path]`
+   - module registration exists in `[modules_path]`
+   - workers/processors exist in `[workers_path]` when applicable
+   - tests exist or pass when required
+3. Mark only verified items `[x]`; leave uncertain items unchecked.
+4. If all tasks in a phase are complete, update phase status using the checklist's existing format.
+5. Update any overall progress table using the checklist's existing format.
+6. Save related checklist edits together.
+```
+
+### `session-end.md`
+
+```markdown
+# /session-end
+
+Wrap up the session: verify work, update checklist, and prepare a commit if requested.
+
+## Argument
+Optional phase number: `/session-end 3`.
+
+## Instructions
+
+1. Check status:
+   ```bash
+   git status
+   ```
+
+2. Verify lint/type checks:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   ```
+
+3. Run tests:
+   ```bash
+   [test_cmd]
+   ```
+
+4. Update checklist:
+   run `/update-checklist <phase>` when a phase number is known.
+
+5. If the user asked to commit, stage only relevant files:
+   ```bash
+   git add [backend_dir] [frontend_dir] [migration_dir] [checklist_file]
+   git commit -m "Phase <N>: <summary>"
+   ```
+
+6. Summarize:
+   - files changed
+   - checks run and result
+   - checklist updates
+   - remaining risks or next task
+```
+
+---
+
+## `.agents/settings.json`
+
+Use the Codex-compatible repo settings format already present in this repository if one exists.
+
+Requirements:
+- Do not generate `.claude/settings.json`.
+- Do not point hooks at `.claude/hooks/*`.
+- Keep only repo-shareable permissions here.
+- Use actual project paths and commands.
+- Verify every allowed path exists before writing.
+- Remove comments if the target format is strict JSON.
+- Preserve existing supported settings unless they conflict with generated resources.
+
+Template shape:
+
+```json
+{
+  "$schema": "[settings_schema]",
+  "permissions": {
+    "allow": [
+      "Bash([package_manager] run lint*)",
+      "Bash([package_manager] run test*)",
+      "Bash([package_manager] run build*)",
+      "Bash([migration_tool] *)",
+      "Bash(docker compose*)",
+      "Edit(/.agents/skills/**)",
+      "Edit(/.agents/hooks/**)",
+      "Edit(/.agents/commands/**)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agents/hooks/prefer_lsp.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agents/hooks/ts-diagnostics.py"
+          },
+          {
+            "type": "command",
+            "command": "python .agents/hooks/lint-check.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+If the repo's Codex settings format differs, adapt to the existing supported format instead of forcing this shape.
+
+---
+
+## `.agents/settings.local.json`
+
+User-specific permissions must not be committed.
+
+Create this file only when needed and add it to `.gitignore`.
+
+Typical entries:
+- user home directory read access
+- WSL or alternate mount paths
+- personal tool paths not shared by the team
+- one-off local command permissions used during debugging
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/**)",
+      "Read(//mnt/c/**)"
+    ]
+  }
+}
+```
+
+---
+
+## `.gitignore`
+
+Ensure `.agents/settings.local.json` is ignored.
+
+Do not ignore:
+- `.agents/settings.json`
+- `.agents/skills/**`
+- `.agents/hooks/**`
+- `.agents/commands/**`
+
+---
+
+## Required Placeholder Replacements
+
+Before writing generated files, resolve all placeholders from actual repo evidence.
+
+Hard rule:
+- Before writing files, enumerate every `[...]` token in the generated draft.
+- Replace it with actual project content, replace it with `none` only when the generated file explicitly expects `none`, or remove the optional section that needs it.
+- Do not write any file while a bracket placeholder remains, including placeholders inside code blocks, command prompts, settings, or validation sections.
+
+| Placeholder | Example for React + NestJS Fastify + PostgreSQL | Must be discovered from |
+|---|---|---|
+| `[settings_schema]` | detected Codex settings schema or omit `$schema` if unsupported | existing `.agents/settings.json` |
+| `[package_manager]` | `pnpm`, `npm`, `yarn`, `bun` | lockfile and package scripts |
+| `[project_name]` | `Acme Portal` | package name, README, docs |
+| `[frontend_dir]` | `frontend`, `apps/web`, `packages/client` | React package location |
+| `[backend_dir]` | `backend`, `api`, `apps/api`, `server` | NestJS package location |
+| `[modules_path]` | `apps/api/src/modules/<domain>/<domain>.module.ts` | NestJS module structure |
+| `[controllers_path]` | `apps/api/src/modules/<domain>/<domain>.controller.ts` | controller files |
+| `[models_path]` | `apps/api/prisma/schema.prisma`, `src/db/schema.ts`, `src/**/*.entity.ts` | ORM/tooling |
+| `[schemas_path]` | `src/modules/<domain>/dto/*.dto.ts`, `src/schemas/*` | DTO/schema files |
+| `[services_path]` | `src/modules/<domain>/<domain>.service.ts` | service providers |
+| `[repositories_path]` | `src/modules/<domain>/<domain>.repository.ts`, `src/repositories/*` | data-access pattern |
+| `[endpoints_path]` | same as `[controllers_path]` for NestJS | controller route declarations |
+| `[workers_path]` | `src/jobs/*`, `src/queues/*`, `src/processors/*` | worker/queue setup |
+| `[routes_index]` | root module or feature module registration | NestJS module registration |
+| `[routes_path]` | `src/routes`, `src/pages`, `src/app`, `src/features/*/routes` | frontend router structure |
+| `[components_path]` | `src/components`, `src/shared/ui`, `src/features/*/components` | frontend component structure |
+| `[features_path]` | `src/features`, `src/modules`, `src/domains` | frontend feature structure |
+| `[hooks_path]` | `src/hooks`, `src/features/*/hooks` | frontend hooks structure |
+| `[api_client_path]` | `src/lib/api`, `src/api`, `src/services/api` | frontend API client structure |
+| `[types_path]` | `src/types`, `src/generated`, shared package path | shared/frontend type structure |
+| `[mocks_path]` | `src/mocks`, `src/test/mocks`, or `none` | mock/demo tooling |
+| `[migration_tool]` | `prisma`, `typeorm`, `drizzle-kit`, `knex` | dependencies/scripts |
+| `[migration_create_cmd]` | `pnpm prisma migrate dev --create-only --name` | package scripts/tool docs in repo |
+| `[migration_apply_cmd]` | `pnpm prisma migrate dev`, `pnpm typeorm migration:run` | package scripts |
+| `[migration_status_cmd]` | `pnpm prisma migrate status` | package scripts/tool |
+| `[migration_dir]` | `prisma/migrations`, `drizzle`, `migrations` | actual path |
+| `[schema_validate_cmd]` | `pnpm prisma validate`, `pnpm drizzle-kit check` | tool support |
+| `[seed_path]` | `prisma/seed.ts`, `src/db/seed.ts`, `none` | seed scripts |
+| `[linter_cmd]` | `pnpm lint`, `npm run lint`, `biome check .` | package scripts |
+| `[linter_autofix_cmd]` | `pnpm lint --fix`, `pnpm format`, `biome check --write .` | package scripts |
+| `[formatter_cmd]` | `pnpm format`, `prettier --write .` | package scripts |
+| `[type_checker_cmd]` | `pnpm typecheck`, `tsc --noEmit` | package scripts |
+| `[frontend_typecheck_argv]` | `"pnpm", "--filter", "web", "run", "typecheck"` | frontend/package typecheck command as Python argv tokens |
+| `[backend_typecheck_argv]` | `"pnpm", "--filter", "api", "run", "typecheck"` | backend/package typecheck command as Python argv tokens |
+| `[test_cmd]` | `pnpm test`, `pnpm vitest run`, `npm test` | package scripts |
+| `[test_dir]` | `test`, `tests`, `src/**/*.spec.ts` | repo layout |
+| `[database_test_scope]` | `tests/db`, `src/**/*.repository.spec.ts`, or empty suffix | test layout |
+| `[contract_test_scope]` | `tests/contracts`, `src/**/*.contract.spec.ts`, or empty suffix | test layout |
+| `[frontend_build_cmd]` | `pnpm --filter web build`, `cd frontend && npm run build` | workspace/package scripts |
+| `[backend_build_cmd]` | `pnpm --filter api build`, `cd backend && npm run build` | workspace/package scripts |
+| `[api_contract_source]` | `openapi.yaml`, `src/openapi.ts`, generated client path, or `none` | API contract tooling |
+| `[error_shape]` | `{ code, message, details? }` | global error filter/contracts |
+| `[DEMO_ENV_VAR]` | `VITE_DEMO_MODE`, `NEXT_PUBLIC_DEMO_MODE`, or remove section | frontend env/config |
+| `[backend_service_name]` | `api`, `backend`, `server`, or `none` | Docker/Compose config |
+| `[frontend_service_name]` | `web`, `frontend`, or `none` | Docker/Compose config |
+| `[postgres_service_name]` | `postgres`, `db`, or `none` | Docker/Compose config |
+| `[redis_service_name]` | `redis`, `cache`, or `none` | Docker/Compose config |
+| `[docker_status_cmd]` | `docker compose ps`, or remove DevOps skill if not applicable | Docker/Compose config |
+| `[backend_health_cmd]` | `curl http://localhost:3000/health`, or `none` | health check config |
+| `[tasks_file]` | `Docs/tasks.md`, `Docs/*Checklist*.md` | docs inspection |
+| `[checklist_file]` | same as task checklist if committed | docs inspection |
+| `[api_contract_check_cmd]` | `pnpm openapi:generate`, `pnpm contract:test` | package scripts |
+| `[outbox_table]` | `outbox_events`, `domain_events`, or remove outbox section | database schema |
+| `[worker_file_path]` | `src/jobs/outbox.processor.ts`, or remove outbox section | worker/queue structure |
+| `[N]` | actual number such as `10`, or rewrite sentence without numeric placeholder | discovered config or project decision |
+| `[version]` | actual package version, or omit the version fragment | package manifests |
+| `[library]` | actual library name, or `none` only where allowed | package manifests |
+| `[goal]` | actual project goal sentence | README/docs |
+| `[capability]` | actual implemented capability | README/docs/source |
+| `[topic]` | specific referenced topic in canonical ownership pointer | surrounding skill content |
+| `[x]` | literal checklist marker only inside command instructions; do not treat as a replacement placeholder | command prompt text |
+
+No generated file may contain unresolved placeholders.
+
+---
+
+## Final Validation Checklist
+
+Run these checks after generating all files. Fix any failure before handing off.
+
+### Stack checks
+
+- [ ] Generated files mention Codex resources, not Claude resources.
+- [ ] No generated file contains `.claude/`.
+- [ ] No generated file uses `CLAUDE.md` as the primary routing document.
+- [ ] NestJS guidance is controller/module/provider based, not direct Fastify plugin based.
+- [ ] Fastify guidance is limited to the NestJS Fastify adapter and compatible packages.
+- [ ] Express-only APIs are not recommended unless the repo actually uses them.
+- [ ] Python/FastAPI/Pydantic/SQLAlchemy/Alembic/Celery/Ruff/pytest/mypy guidance is absent unless those tools are actually detected.
+
+### Ownership checks
+
+- [ ] Cache/Redis/queue topology appears in one canonical skill only: `architecture-deep-dive`.
+- [ ] Search/vector/RAG storage rule appears in one canonical skill only: `architecture-deep-dive`.
+- [ ] Full outbox spec appears in one canonical skill only: `backend-patterns`.
+- [ ] PostgreSQL migration rules appear in one canonical skill only: `database-patterns`.
+- [ ] API contract and error envelope rules appear in one canonical skill only: `api-contract-guidelines`.
+- [ ] Frontend conventions appear in one canonical skill only: `frontend-guidelines`.
+- [ ] Cross-cutting principles appear only in `AGENTS.md`.
+
+### Placeholder checks
+
+- [ ] Search generated files for unresolved bracket placeholders such as `[frontend_dir]`.
+- [ ] Search generated files for generic placeholder project names.
+- [ ] Every referenced path exists or was intentionally created as part of `.agents`.
+- [ ] Hook paths in `.agents/settings.json` resolve to real files.
+- [ ] Command prompts use actual package manager commands.
+
+### Settings checks
+
+- [ ] `.agents/settings.json` is valid JSON if the format is strict JSON.
+- [ ] `.agents/settings.local.json` is listed in `.gitignore` if created.
+- [ ] `.agents/settings.json` contains no user-specific home paths.
+- [ ] Destructive commands such as force push, hard reset, and recursive deletion are denied or omitted.
+
+### Quality checks
+
+- [ ] `AGENTS.md` is 45 lines or fewer.
+- [ ] `AGENTS.md` has only one concise LSP/Grep policy sentence.
+- [ ] `prefer_lsp.py` includes `.ts`, `.tsx`, `.js`, `.jsx`; it includes `.py` only if Python is application code.
+- [ ] TypeScript diagnostics hook paths match the real frontend/backend folders.
+- [ ] Lint hook uses the detected Node linter, not Ruff.
+- [ ] Migration command uses the detected migration tool, not Alembic unless Alembic actually exists.
+- [ ] Test command uses the detected runner and execution mode.
+
+### Architecture integrity checks
+
+- [ ] Controllers do not own business logic in generated guidance.
+- [ ] Services do not own low-level query construction when a repository/data-access layer exists.
+- [ ] Repositories/data-access providers do not own authorization, HTTP, or queue orchestration.
+- [ ] Queue dispatch from controllers is discouraged unless the repo already intentionally does that.
+- [ ] PostgreSQL remains the transactional source of truth.
+- [ ] Cache/queue systems are not described as domain data sources of truth.
+
+### Verification commands
+
+Run available safe checks after generation:
+
+```bash
+[linter_cmd]
+[type_checker_cmd]
+[test_cmd] <narrow_safe_scope_if_available>
+```
+
+If a check is unavailable or unsafe to run, report why.
+
+---
+
+## Final Response Requirements
+
+After generating the configuration, report:
+- files created or updated
+- key stack facts discovered
+- validation checks run
+- checks skipped and why
+- any remaining placeholders intentionally omitted because the project lacks that concept
+
+Keep the handoff concise. Do not paste every generated file unless the user explicitly asks.

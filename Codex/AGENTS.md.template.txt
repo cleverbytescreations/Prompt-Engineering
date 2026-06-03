@@ -1,0 +1,116 @@
+# AGENTS.md
+
+## 1. Project Overview
+Short description of the project (1–2 lines).
+Example:
+This is a FastAPI-based backend for a credential automation platform using PostgreSQL and Redis.
+
+---
+
+## 2. Tech Stack
+- Backend: Python (FastAPI)
+- Frontend: React
+- Database: PostgreSQL
+- Cache/Queue: Redis
+- Storage: Minio
+
+---
+
+## 3. Setup Commands
+# Install dependencies
+pip install -r requirements.txt
+
+# Run application
+uvicorn app.main:app --reload
+
+# Run tests
+pytest
+
+---
+
+## 4. Project Structure (High-Level)
+- `/app` ? main backend code
+- `/app/api` ? API routes
+- `/app/services` ? business logic
+- `/app/models` ? DB models
+- `/app/core` ? config, auth, utilities
+
+---
+
+## 5. Coding Guidelines
+- Follow PEP8 (Python)
+- Use type hints for all functions
+- Prefer async functions where applicable
+- Keep services stateless
+
+---
+
+## 6. API Conventions
+- REST-based APIs
+- Use JSON request/response
+- Standard response format:
+  {
+    "status": "success",
+    "data": {},
+    "error": null
+  }
+
+---
+
+## 7. Database Guidelines
+- Use SQLAlchemy ORM
+- All tables must include:
+  - id (UUID)
+  - created_at
+  - updated_at
+
+---
+
+## 8. Testing Instructions
+- Use pytest
+- Place tests under `/tests`
+- Cover all service-layer logic
+
+---
+
+## 9. Do's and Don'ts
+### Do:
+- Write modular, reusable code
+- Validate inputs strictly
+- Log important operations
+
+### Don’t:
+- Hardcode credentials
+- Skip error handling
+- Break existing API contracts
+
+---
+
+## 10. External Integrations
+- DataFlow API ? for application data
+- OCR Service ? for document parsing
+
+---
+
+## 11. Notes for AI Agent
+- Prefer modifying existing modules instead of creating new ones
+- Always check existing services before adding new logic
+- Keep responses consistent with existing API format
+
+## 12. Architecture Patterns
+- Checkpoint-based rule engine
+- Event-driven processing (Redis queues)
+- Separation of ingestion, processing, and decision layers
+
+## 13. Data Model Notes
+- Canonical model for applications, applicants, licenses
+- Rule evaluation stored in evaluation_logs table
+
+## 14. AI/LLM Usage
+- LLM used only for extraction (not decision making)
+- Rule engine is source of truth
+
+## 15. Performance Guidelines
+- Use async APIs
+- Batch processing for OCR/LLM
+- Avoid blocking calls

@@ -1,0 +1,962 @@
+Files to refer:
+---------------
+1. Docs/Solution-Architecture-Document.md
+2. Docs/implementation-plan.md
+
+please validate the skills, hooks and commands based on the following prompts are aligning with the architecture & tasks. If there are any change required, please update respective MD files.
+
+##########################################
+
+# Prompt: Generate Codex Agent Configuration for a New Project
+
+You are setting up Codex configuration for a software project from scratch.
+Before generating anything, read the project to discover its actual structure:
+
+1. Read `AGENTS.md` if it exists; otherwise read `README.md` and root-level docs
+2. List the root directory to find top-level folders
+3. Read `package.json` / `pyproject.toml` / `requirements.txt` / lockfiles to identify the exact tech stack
+4. Identify: frontend framework, backend framework, database(s), cache, queue, search,
+   object storage, linter(s), test runner(s), migration tool, i18n library
+5. Check whether `Docs/` (or `docs/`) exists and list its contents
+6. Find the task checklist file (commonly `Docs/tasks.md` or similar)
+7. Confirm the absolute path to the backend directory (needed for `.agents` hooks)
+8. Confirm the relative path to the frontend directory (needed for diagnostics hooks)
+9. Inspect whether `.agents/settings.json` already exists and preserve the compatible shape if it does
+10. Inspect whether `.agents/skills/`, `.agents/hooks/`, and `.agents/commands/` already exist
+
+Then generate only Codex-supported repository resources, preferring:
+
+1. `AGENTS.md`
+2. `.agents/` resources such as skills, hooks, settings, and repo command prompts if supported
+
+Never generate `.claude/` files. Never leave `CLAUDE.md` as the primary routing document.
+Every detail must come from what you found. Never use placeholder project names and never copy content from another repo.
+
+---
+
+## Ownership rules (read before generating anything)
+
+Each fact has exactly ONE canonical home. Violations cost tokens every conversation.
+
+| Fact | Canonical file |
+|---|---|
+| Cache/DB slot assignments | `architecture-deep-dive` skill |
+| Search/vector storage separation rule | `architecture-deep-dive` skill |
+| Transactional outbox full spec | `backend-patterns` skill |
+| Cross-cutting principles (AI role, moderation) | `AGENTS.md` |
+| Frontend conventions | `frontend-guidelines` skill |
+
+When a skill needs a fact it does not own, write one sentence:
+"See `[owning skill]` for `[topic]`." Never duplicate the full content.
+
+---
+
+## File 1: `AGENTS.md` (project root)
+
+Maximum 65 lines. This is a routing document, not a knowledge base.
+
+```markdown
+# AGENTS.md
+
+## Project Summary
+[2-4 sentences: what the system does, who uses it, and its primary domain]
+
+Core goals:
+- [goal]
+- [goal]
+
+Principles:
+- [cross-cutting invariant]
+- [cross-cutting invariant]
+
+## Tech Stack
+Frontend: [exact libraries]
+Backend: [exact framework + ORM + auth]
+Data: [databases, search, object storage]
+Infra: [cache, queue, containers/tooling]
+
+## Skill Routing
+Use `architecture-deep-dive` for [architecture, workflows, scalability, search/RAG, storage, caching strategy].
+Use `frontend-guidelines` for all work inside `[frontend_dir]/`, including [UI, forms, state, mocks, API contracts].
+Use `backend-patterns` for [framework] backend design, services, repositories, async processing, and integration patterns.
+
+## Key Rules
+- [6-10 one-line invariants only; no paragraphs]
+- [Each detailed skill-owned rule appears here only as a short routing hint]
+- [Example: CQRS writes -> transactional DB; discovery -> search system]
+- [Example: Heavy tasks run async via worker]
+- [Example: `NEXT_PUBLIC_DEMO_MODE=true` enables MSW mocks]
+
+## Code Navigation Policy
+Prefer LSP for `[primary typed language extensions]` symbol lookup; use Grep only as fallback for config strings, comments, TODOs, and non-symbol literals.
+```
+
+Notes:
+- If `AGENTS.md` already exists, update it instead of duplicating it.
+- Keep this file short because Codex will see it often.
+
+---
+
+## File 2: `.agents/skills/architecture-deep-dive/SKILL.md`
+
+```markdown
+---
+name: architecture-deep-dive
+description: Use for system architecture, module boundaries, scalability, search design, AI/RAG design, storage separation, async/event-driven workflows, and platform evolution decisions.
+---
+
+# Architecture Deep Dive
+
+Use this skill when the task involves:
+- [architecture trigger]
+- [search trigger]
+- [scaling trigger]
+
+## Project Architecture Baseline
+
+[1-2 sentences describing the platform and its core domain]
+
+Core capabilities:
+- [capability]
+- [capability]
+
+Core principle:
+See `AGENTS.md -> Principles` for cross-cutting constraints.
+
+## Core Architecture
+
+### Transaction System
+Use [DB] as the source of truth for:
+- [data category]
+- [data category]
+
+### Search System
+[Describe the search backend, indexing strategy, and scoring approach]
+[State clearly whether vectors live in the search engine or elsewhere; this is the only canonical statement]
+[Index naming conventions, indexed content types, and field structure]
+
+### AI / Semantic Layer
+[What gets embedded, what model/provider, batching strategy, and what stays out of vector storage]
+[Do not restate the storage-separation rule here if already stated in Search System]
+
+### Document / Content Lifecycle
+[Status fields and lifecycle states, and what they affect]
+
+### Object Storage
+Use [S3/MinIO/Azure Blob/etc.] for: [asset types]
+
+### Cache / Queue
+[THIS IS THE CANONICAL LOCATION FOR CACHE SLOT DEFINITIONS]
+Use [Redis/equivalent] with [N] dedicated slots:
+- `db=N` - [purpose] ([TTL, eviction policy, key pattern])
+- `db=N` - [purpose] ([TTL, eviction policy, key pattern])
+Do not mix data across slots.
+
+### Event / Async Layer
+Use the transactional outbox pattern. Full implementation spec lives in `backend-patterns`.
+Use async/event-driven flows for: [heavy operations]
+
+## Architecture Principles
+
+### [Principle name]
+[Rule plus brief rationale]
+
+### [Principle name]
+[Rule plus brief rationale]
+
+## Preferred Patterns
+
+### [Pattern name]
+[Short project-specific description]
+
+## Canonical Workflows
+
+### [Workflow 1]
+[Step 1] -> [Step 2] -> [Step 3]
+
+### [Workflow 2]
+[Step 1] -> [Step 2] -> [Step 3]
+
+## Scalability Thresholds
+[When each component should evolve; use real thresholds if available]
+
+## When Giving Architecture Advice
+
+Always:
+- [guideline]
+- [guideline]
+
+## Output Style
+Prefer module breakdowns, component interactions, sequence steps, evolution plans, and risks/tradeoffs/recommendations.
+```
+
+---
+
+## File 3: `.agents/skills/backend-patterns/SKILL.md`
+
+```markdown
+---
+name: backend-patterns
+description: Use for [framework] backend design, clean architecture, services, repositories, async workflows, queues, caching, AI/document pipelines, and scalable backend implementation.
+---
+
+# Backend Patterns
+
+Use this skill when the task involves:
+- [framework/module design]
+- [service/repository boundaries]
+- [database interaction]
+- [async processing]
+- [API design]
+
+## Backend Baseline
+
+Preferred stack:
+- [framework + version]
+- [ORM / query builder]
+- [validation library]
+- [auth approach]
+- [cache]
+- [queue / worker]
+
+## Backend Architecture Rule
+
+Use clean layering:
+1. API layer - `[endpoints_path]` - HTTP concerns only: parse request, enforce dependencies, call service, return response
+2. Service layer - `[services_path]` - business logic, orchestration, transaction/session coordination, side effects
+3. Repository/data-access layer - `[repositories_path]` - SQLAlchemy query construction; receives `AsyncSession`; returns ORM models, rows, or scalar values
+4. Model/data layer - `[models_path]` - ORM definitions only
+
+API -> Service -> Repository -> Model. Services own sessions and pass `db` into repository functions. Do not put SQLAlchemy `select()`, `insert()`, `update()`, `delete()`, joins, filters, ordering, or pagination logic in service or endpoint files.
+
+## API Design Rules
+- [rule]
+- [rule]
+
+## Service Layer Rules
+- Services own tenant/platform session boundaries and transactions.
+- For tenant-scoped work, services use the project's tenant-aware session helper, such as `async with get_tenant_session(schema) as db:`.
+- Services pass `db: AsyncSession` into repository functions.
+- Services may call repositories from multiple domains within one session for cross-domain orchestration.
+- Services own business rules, validation, workflow transitions, cost calculations, side effects, and API error translation.
+- Services must not contain SQLAlchemy query construction such as `select()`, `insert()`, `update()`, `delete()`, joins, filters, ordering, or pagination.
+
+## Repository Layer Rules
+- Use one repository/data-access file per domain when the project has SQLAlchemy-backed services: `[repositories_path]`.
+- All repository functions are `async def` and accept `db: AsyncSession` as the first parameter.
+- Repositories own query construction, execution, joins, filters, ordering, pagination, aggregates, and persistence helpers.
+- Repositories contain no business logic, workflow transitions, authorization decisions, Celery enqueueing, or HTTP concerns.
+- Repositories must not raise `HTTPException`; return `None`, return empty collections, or raise domain/database errors for the service to translate.
+- Repositories are stateless; prefer module-level functions unless the project already uses thin repository classes.
+- Sessions are opened by services, never inside repository functions.
+- Tenant repositories receive tenant-scoped sessions; platform repositories receive platform sessions. Do not mix platform and tenant data paths.
+
+Canonical signatures to include:
+    async def get_by_id(db: AsyncSession, entity_id: UUID) -> Model | None: ...
+    async def list_with_filters(db: AsyncSession, filters: FilterSchema) -> list[Model]: ...
+    async def create(db: AsyncSession, data: dict) -> Model: ...
+    async def update(db: AsyncSession, entity: Model, changes: dict) -> Model: ...
+    async def delete(db: AsyncSession, entity_id: UUID) -> None: ...
+
+If the project has no existing repository/data-access directory but SQLAlchemy queries are inline in services, generate repository guidance for new or substantially changed backend work. Do not require an immediate full-codebase refactor unless the user asks for it.
+
+## Async / Background Rules
+
+Use background workers for: [heavy tasks]
+Do not block request/response cycles with heavy work.
+
+Typical pattern:
+1. Accept request
+2. Persist initial state
+3. Enqueue async job
+4. Return status or job-tracking response
+
+## Redis Rules
+
+[General Redis usage rules only]
+
+### Redis DB Slot Strategy
+See `architecture-deep-dive -> Cache / Queue` for canonical DB slot assignments and TTL rules.
+
+## Search / AI Integration Rules
+
+[How backend orchestrates search/AI ownership boundaries]
+[Do not duplicate the canonical search/vector storage rule]
+
+### [SearchCacheService or equivalent]
+[Implementation guidance: key pattern, TTL, invalidation, middleware integration]
+
+## OCR / AI Workflow Rules
+[Project-specific upload -> moderation -> OCR -> chunk -> embed -> index flow if applicable]
+
+## Transactional Outbox Pattern
+
+[THIS IS THE CANONICAL LOCATION FOR THE FULL OUTBOX SPEC]
+All domain events ([event types]) must:
+1. Write an `[outbox_table]` row in the same [DB] transaction as the state change
+2. Never dispatch queue jobs directly from the API handler without the outbox
+
+Outbox polling worker (`[worker_file_path]`, [scheduler] every [interval]) reads
+`PENDING` events -> dispatches to [queue] -> sets `[PUBLISHED/FAILED/DEAD_LETTER]` after [N] retries.
+
+## Security Rules
+- [RBAC/audit/org access rule]
+- [RBAC/audit/org access rule]
+
+## Performance Rules
+- [async/batching/caching rule]
+- [async/batching/caching rule]
+
+## Error Handling Rules
+- [structured error rule]
+- [async failure handling rule]
+```
+
+---
+
+## File 4: `.agents/skills/frontend-guidelines/SKILL.md`
+
+```markdown
+---
+name: frontend-guidelines
+description: Use for all work inside `[frontend_dir]/`, including [framework], TypeScript, [ui_library], [data_fetching_lib], forms, mocks, API contracts, and UI task execution.
+---
+
+# Frontend Guidelines
+
+Use this skill when the task involves:
+- [page creation]
+- [components]
+- [forms]
+- [state]
+- [mock APIs]
+- [routing]
+
+## Scope Rules
+- All frontend work must stay inside `[frontend_dir]/`
+- Do not create files outside `[frontend_dir]/` unless adding root-level docs
+- Use the existing module structure
+
+## Frontend Stack
+- [framework]
+- [UI library]
+- [data fetching]
+- [state]
+- [forms]
+- [validation]
+- [mocks/demo]
+- [i18n]
+
+## Import Rules
+- Use `[path_alias]/` for imports when the project supports it
+- Avoid deep relative imports across module boundaries
+
+## UI Design Rules
+- Prefer [UI library] for interactive elements
+- Use [CSS approach] mainly for layout and spacing
+- [Any project-specific status badge/display rules]
+
+## Component Rules
+- [naming convention]
+- One component per file unless a very small helper is justified
+- Keep components presentation-focused; no business logic in UI
+
+## Data Fetching Rules
+- API calls go through [React Query / equivalent]
+- Prefer typed API client functions in `[actual api path]`
+- Align request/response types with the implementation plan
+
+## Forms Rules
+- Use [form library] with [validation library]
+- Keep validation schemas explicit
+- Surface validation errors clearly in UI
+
+## State Rules
+- Use [state library] only for [auth/role/light shared UI state]
+- Do not move server state into [state store] when the data-fetching library is the right tool
+
+## Mock / Demo Mode Rules
+When `[DEMO_ENV_VAR]=true`:
+- Use [MSW/equivalent] handlers
+- Match the real API contract shape
+- Include realistic latency
+- Use realistic fixture data
+
+## Source of Truth
+- `[Docs/ui-tasks.md path]` - task checklist
+- `[Docs/ui-implementation-plan.md path]` - API contract source of truth
+
+## Directory Guidance
+- pages/routes -> `app/` or `pages/`
+- reusable UI -> `components/`
+- data hooks -> `hooks/`
+- API helpers -> `lib/api/`
+- global state -> `store/`
+- shared types -> `types/`
+- mocks -> `mocks/`
+
+## When Generating Frontend Output
+Prefer exact file paths, minimal production-usable code, typed props, reusable patterns aligned to current structure, and short placement explanations.
+
+## Avoid
+- [anti-pattern]
+- [anti-pattern]
+```
+
+---
+
+## File 5: `.agents/hooks/prefer_lsp.py`
+
+Adapt the extension list to the project's primary typed languages.
+Keep the hook lightweight because it runs frequently.
+
+```python
+#!/usr/bin/env python3
+import json
+import sys
+
+data = json.load(sys.stdin)
+tool_input = data.get("tool_input", {}) or {}
+
+candidates = []
+for key in ("path", "paths", "glob", "pattern", "query", "include"):
+    value = tool_input.get(key)
+    if isinstance(value, str):
+        candidates.append(value)
+    elif isinstance(value, list):
+        candidates.extend(str(v) for v in value)
+
+text = " ".join(candidates).lower()
+
+lsp_exts = ("[.ext1]", "[.ext2]")  # e.g. (".ts", ".tsx", ".py")
+
+if any(ext in text for ext in lsp_exts):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": (
+                "For typed-code navigation, use the LSP tool instead of Grep. "
+                "Prefer definitions, references, symbols, hover/type info, and diagnostics. "
+                "Use Grep only as a fallback when LSP cannot answer."
+            )
+        }
+    }))
+
+sys.exit(0)
+```
+
+---
+
+## File 6: `.agents/hooks/ts-diagnostics.sh` (or language-specific equivalent)
+
+Prerequisite: `jq` must be installed. The script should check for it at runtime and exit silently if unavailable.
+
+**For TypeScript projects:**
+
+```bash
+#!/bin/bash
+# Runs tsc --noEmit after every Edit/Write on a .ts/.tsx file.
+# Exit non-zero when errors are found so Codex surfaces them immediately.
+
+INPUT=$(cat)
+
+if ! command -v jq &>/dev/null; then
+  exit 0
+fi
+
+FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+
+if [[ ! "$FILE" =~ \.(ts|tsx)$ ]]; then
+  exit 0
+fi
+
+FRONTEND_DIR="./[frontend_dir]"
+if [ ! -d "$FRONTEND_DIR" ]; then
+  exit 0
+fi
+
+DIAG=$(cd "$FRONTEND_DIR" && npx tsc --noEmit --pretty false 2>&1)
+TSC_EXIT=$?
+
+if [ $TSC_EXIT -eq 0 ]; then
+  exit 0
+fi
+
+echo "TypeScript errors detected after editing: $FILE"
+echo ""
+echo "$DIAG" | head -50
+exit 2
+```
+
+**For Python-only projects:** replace `tsc` with `mypy [module] --ignore-missing-imports`.
+**For Go/Rust/Java/etc.:** replace with the language's type checker or build command.
+
+---
+
+## File 7: `.agents/commands/` - optional repo command prompts
+
+Generate these only if the target Codex workflow supports repo-local command prompt files.
+If repo commands are not supported, skip this directory and keep the equivalent guidance inside the relevant skill instead.
+
+If supported, create concise markdown prompts for:
+- `fix-error.md`
+- `impl-phase.md`
+- `lint-fix.md`
+- `migrate.md`
+- `new-endpoint.md`
+- `phase-status.md`
+- `run-tests.md`
+- `session-end.md`
+- `update-checklist.md`
+
+For every command, replace all placeholders with project-specific values before writing.
+Run directory/file checks on each referenced path to verify it exists where applicable.
+
+| Placeholder | Replace with |
+|---|---|
+| `[project_name]` | actual project name |
+| `[backend_dir]` | actual backend path, if any |
+| `[models_path]` | model file pattern or nearest equivalent |
+| `[schemas_path]` | schema/DTO file pattern or nearest equivalent |
+| `[services_path]` | service/business-logic file pattern or nearest equivalent |
+| `[repositories_path]` | repository/data-access file pattern, e.g. `backend/app/repositories/<domain>_repository.py` or detected equivalent |
+| `[endpoints_path]` | route/controller/endpoint file pattern or nearest equivalent |
+| `[workers_path]` | worker/task/job file pattern, if any |
+| `[migration_tool]` | actual migration tool |
+| `[autogenerate_cmd]` | migration autogenerate/create subcommand |
+| `[migration_dir]` | migration directory |
+| `[linter_cmd]` | lint check command with flags |
+| `[linter_autofix_cmd]` | lint auto-fix command |
+| `[type_checker_cmd]` | type check command |
+| `[test_cmd]` | test command with flags in the detected execution mode |
+| `[test_dir]` | test directory path |
+| `[tasks_file]` | checklist file path |
+| `[checklist_file]` | git-committed checklist file for staging |
+
+Rules for repo command prompts:
+- Replace every placeholder with project-specific values
+- Verify referenced paths exist before writing
+- Keep commands short and token-efficient
+- Default to LSP-driven navigation, not broad file reads
+- Never mention another project
+- Never reference `.claude/`
+
+Special rule for `run-tests.md`:
+- Detect whether the project root has a Docker Compose file (`docker-compose.yml`, `docker-compose.yaml`, `compose.yml`, or `compose.yaml`).
+- If Docker Compose exists and defines the app/test service, generate unit-test and suite commands that run inside that container, for example `docker compose exec [service] [test_runner] ...`.
+- Include a container readiness check such as `docker compose ps [service]` and a project-appropriate `docker compose up -d [service]` instruction when needed.
+- If no Docker Compose-backed test service exists, generate standalone host/in-project test commands instead.
+- Do not include both Docker and standalone command variants unless the discovered project genuinely supports both.
+- For failing tests, instruct Codex to rerun the specific failing unit test in the same detected execution mode before rerunning the full suite.
+
+### `fix-error.md` blueprint
+```markdown
+# /fix-error
+
+Efficiently diagnose and fix a specific error without reading unrelated code.
+
+## Argument
+Paste the error/traceback after the command: `/fix-error <traceback>`
+
+## Instructions
+
+### Step 1 - Parse the error
+Extract the exact file and line number, error type and message, failing symbol, and any chained cause.
+
+### Step 2 - Read only what is needed
+- Read only a small window around the failing line.
+- Use LSP hover/type info on the failing symbol when available.
+- Use LSP definition/references only when the error depends on a declaration or shared utility.
+- If the error is in a dependency, find the last stack frame that belongs to this project.
+
+### Step 3 - Fix
+Apply the minimal safe change. Do not refactor surrounding code unless the root cause requires it.
+
+### Step 4 - Verify
+Run the narrowest relevant test or checker:
+```bash
+[test_cmd] <specific_test_or_file>
+```
+
+### Step 5 - Report
+State what was wrong, what changed, and the file:line reference.
+```
+
+### `impl-phase.md` blueprint
+```markdown
+# /impl-phase
+
+Implement the next incomplete phase of [project_name], following the project checklist exactly.
+
+## Argument
+Pass the phase number: `/impl-phase 3`
+If no argument is given, detect the next incomplete phase from `[tasks_file]`.
+
+## Instructions
+
+### Step 1 - Scope
+Read only the relevant phase section from `[tasks_file]`.
+Use `AGENTS.md` and applicable `.agents/skills/*` files for architecture and coding rules.
+Do not re-read the full implementation plan unless the phase section explicitly requires it.
+
+### Step 2 - Navigate with symbols first
+- Use LSP definition/references for models, schemas, services, endpoints, and shared utilities.
+- Use targeted file reads only for known sections.
+- Avoid broad searches except for config strings, comments, TODOs, or non-symbol literals.
+
+### Step 3 - Implementation order
+Follow the discovered project structure. For backend feature phases, prefer:
+1. Models/entities -> `[models_path]`
+2. Migration -> generate, review, apply
+3. Schemas/DTOs -> `[schemas_path]`
+4. Repository/data-access -> `[repositories_path]` (all SQLAlchemy queries here)
+5. Service/business logic -> `[services_path]` (calls repositories; owns sessions and business decisions)
+6. Endpoint/controller/router -> `[endpoints_path]`
+7. Router/module registration if needed
+8. Workers/tasks/jobs -> `[workers_path]` if the work is async
+
+### Step 4 - Quality gates
+Run after meaningful edit groups:
+```bash
+[linter_cmd]
+[type_checker_cmd]
+```
+
+### Step 5 - Test
+```bash
+[test_cmd]
+```
+
+### Step 6 - Update checklist
+Mark verified completed items `[x]` in `[tasks_file]`.
+Update phase status and overall progress if the checklist has those sections.
+
+## Safety rules
+- Do not re-read files you just edited.
+- Batch related edits where safe.
+- Stop before destructive database or filesystem operations.
+```
+
+### `lint-fix.md` blueprint
+```markdown
+# /lint-fix
+
+Run linting and type checks, then fix all issues found.
+
+## Instructions
+
+1. Auto-fix safe lint issues:
+   ```bash
+   [linter_autofix_cmd]
+   ```
+
+2. Run type checker:
+   ```bash
+   [type_checker_cmd]
+   ```
+
+3. Fix remaining issues manually:
+   - Use LSP hover/type info before adding annotations or changing signatures.
+   - Prefer the project’s established patterns over broad rewrites.
+   - Do not suppress warnings with ignore comments unless there is a documented reason.
+
+4. Confirm clean:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   ```
+
+5. Report the count fixed and any remaining issue with file:line.
+```
+
+### `migrate.md` blueprint
+```markdown
+# /migrate
+
+Generate and apply a `[migration_tool]` migration.
+
+## Argument
+Pass migration name: `/migrate <name>`
+
+## Instructions
+
+1. Check current migration state:
+   ```bash
+   cd [backend_dir] && [migration_tool] current
+   ```
+
+2. Generate/create the migration:
+   ```bash
+   cd [backend_dir] && [migration_tool] [autogenerate_cmd] -m "$ARGUMENT"
+   ```
+
+3. Review the generated migration before applying:
+   - Confirm upgrade/apply creates only expected objects.
+   - Confirm downgrade/rollback reverses the change safely when the tool supports it.
+   - Confirm tenant/platform schema rules if this project has schema separation.
+   - Confirm no destructive data loss unless explicitly requested.
+
+4. Apply:
+   ```bash
+   cd [backend_dir] && [migration_tool] upgrade head
+   ```
+
+5. Verify:
+   ```bash
+   cd [backend_dir] && [migration_tool] current
+   ```
+
+6. If migration fails, do not edit the database manually. Fix the model/migration and rerun the migration workflow.
+```
+
+### `new-endpoint.md` blueprint
+```markdown
+# /new-endpoint
+
+Scaffold a new API endpoint following the [project_name] backend pattern.
+
+## Argument
+`/new-endpoint <domain> <verb> <resource>`
+
+## Instructions
+
+1. Find the nearest existing endpoint/controller for the same domain or style.
+2. Use LSP definition/references to confirm imports, dependency injection, auth, routing, and response patterns.
+3. Add or update schema/DTO types in `[schemas_path]`.
+4. Add repository/data-access functions in `[repositories_path]`.
+5. Add service/business logic in `[services_path]` that calls the repository and does not construct raw SQLAlchemy queries.
+6. Add route/controller code in `[endpoints_path]`.
+7. Register the route/module if the project requires explicit registration.
+8. Add or update focused tests in `[test_dir]` when the project has endpoint tests.
+9. Run:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   [test_cmd] <specific_endpoint_test_if_available>
+   ```
+
+## Constraints
+- Enforce the project’s authentication and authorization dependency pattern.
+- Preserve tenant/org/user scoping rules when applicable.
+- Do not put business logic directly in route handlers if the project has a service layer.
+- Report only the schema, repository, service, route, and test locations changed.
+```
+
+### `phase-status.md` blueprint
+```markdown
+# /phase-status
+
+Show the current phase and exact next tasks.
+
+## Instructions
+
+1. Read `[tasks_file]`.
+2. Focus on the first incomplete phase or the phase requested by the user.
+3. List unchecked `[ ]` items grouped by section.
+4. Identify which work can run in parallel and which work is sequential.
+5. Output a prioritized work order.
+
+Constraints:
+- Do not implement anything.
+- Keep output under 40 lines.
+- Include file/path references only when they are present in the checklist or obvious from the project structure.
+```
+
+### `session-end.md` blueprint
+```markdown
+# /session-end
+
+Wrap up the session: verify work, update checklist, and prepare a commit if requested.
+
+## Argument
+Optional phase number: `/session-end 3`
+
+## Instructions
+
+1. Check status:
+   ```bash
+   git status
+   ```
+
+2. Verify lint/type checks:
+   ```bash
+   [linter_cmd]
+   [type_checker_cmd]
+   ```
+
+3. Run tests:
+   ```bash
+   [test_cmd]
+   ```
+   Do not commit if required tests are red.
+
+4. Update checklist:
+   Run `/update-checklist <phase>` when a phase number is known.
+
+5. If the user asked to commit, stage only relevant project files:
+   ```bash
+   git add [backend_dir] [migration_dir] [checklist_file]
+   git commit -m "Phase <N>: <summary>"
+   ```
+
+6. Session summary:
+   - Files changed
+   - Checks run and result
+   - Checklist updates
+   - Remaining risks or next task
+```
+
+### `update-checklist.md` blueprint
+```markdown
+# /update-checklist
+
+Verify and mark completed tasks in the checklist.
+
+## Argument
+Pass phase number: `/update-checklist 3`
+
+## Instructions
+
+1. Read only the relevant phase section from `[tasks_file]`.
+2. For each unchecked task, verify completion through code evidence:
+   - Models/entities exist in `[models_path]`
+   - Schemas/DTOs exist in `[schemas_path]`
+   - Repository/data-access functions exist in `[repositories_path]`
+   - Services/functions exist in `[services_path]`
+   - Service files do not contain raw SQLAlchemy query construction such as `select()`, `insert()`, `update()`, `delete()`, joins, filters, ordering, or pagination
+   - Endpoints/routes exist in `[endpoints_path]`
+   - Workers/tasks exist in `[workers_path]` when applicable
+   - Tests exist or pass when the task requires tests
+3. Mark only verified items `[x]`; leave uncertain items unchecked.
+4. If all tasks in a phase are complete, update the phase status and completion date using the checklist’s existing format.
+5. Update any overall progress table using the checklist’s existing format.
+6. Save related checklist edits together.
+
+## Token rule
+Read only the relevant checklist section unless the progress table must be updated.
+```
+
+If you create command prompts, prefer `.agents/commands/` as the location.
+
+---
+
+## File 8: `.agents/settings.json`
+
+Use the Codex-compatible repo settings format already present in this repository if one exists.
+Do not generate `.claude/settings.json`.
+Do not point hooks at `.claude/hooks/*`.
+
+Requirements:
+- Keep only repo-shareable permissions here
+- Use actual project paths and commands
+- Verify every allowed path exists before writing
+- Remove comments if the target format is strict JSON
+
+Template shape:
+
+```json
+{
+  "$schema": "[use the schema already compatible with this repo's Codex setup]",
+  "permissions": {
+    "allow": [
+      "Bash([test_runner_cmd]:*)",
+      "Bash([migration_tool]:*)",
+      "Bash([frontend_build_cmd] *)",
+      "Bash(docker compose:*)",
+      "Edit(/.agents/skills/**)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agents/hooks/prefer_lsp.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .agents/hooks/ts-diagnostics.sh"
+          },
+          {
+            "type": "command",
+            "command": "cd \"[ABSOLUTE_BACKEND_PATH]\" && [linter_cmd] 2>&1 | head -15 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+If the current repo already has additional supported Codex settings, keep them unless they conflict with the newly generated resources.
+
+---
+
+## File 9: `.agents/settings.local.json`
+
+User-specific permissions that must NOT be committed.
+Create this file alongside `settings.json` and add it to `.gitignore` if needed.
+
+Typical entries:
+- User home directory read access
+- WSL or alternate mount paths
+- Personal tool paths not shared by the team
+- One-off command permissions used during debugging
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/**)",
+      "Read(//mnt/c/**)"
+    ]
+  }
+}
+```
+
+---
+
+## File 10: `.gitignore`
+
+Ensure `.agents/settings.local.json` is ignored.
+Do not ignore `.agents/settings.json`, skills, or hooks.
+
+---
+
+## Final validation checklist
+
+Run these checks after generating all files:
+
+- [ ] Search for `.claude/` across generated files - there should be no remaining `.claude` paths
+- [ ] Search for `Redis` across generated files - DB slot definitions appear in one file only (`architecture-deep-dive`)
+- [ ] Search for `vector` / semantic storage rule - the canonical statement appears in one file only (`architecture-deep-dive`)
+- [ ] Search for `outbox` - the full outbox spec appears in one file only (`backend-patterns`)
+- [ ] Cross-cutting domain principles appear only in `AGENTS.md`
+- [ ] `AGENTS.md` keeps Grep guidance to a single concise sentence
+- [ ] No generated file contains placeholder project names or unreplaced path placeholders
+- [ ] Every referenced path exists in this project's folder structure
+- [ ] `.agents/settings.json` hook paths resolve to real `.agents/hooks/*` files
+- [ ] `.agents/settings.local.json` is listed in `.gitignore`
+- [ ] The diagnostics hook frontend/backend paths match the real folder names
+- [ ] No generated file contains the name of an unrelated project
+- [ ] `AGENTS.md` stays under 65 lines
+- [ ] Search `select(`, `insert(`, `update(`, and `delete(` in `[services_path]` - service files should not own SQLAlchemy query construction
+- [ ] Verify `[repositories_path]` exists or is generated when backend services require SQLAlchemy queries
+- [ ] Verify each new or substantially changed SQLAlchemy-backed service delegates query construction to repository/data-access functions
+
+Output the generated files with minimal duplication and strong ownership boundaries so Codex spends fewer tokens rediscovering the same project facts.
