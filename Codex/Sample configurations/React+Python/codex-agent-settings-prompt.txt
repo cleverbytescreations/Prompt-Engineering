@@ -239,11 +239,15 @@ API -> Service -> Repository -> Model. Services own sessions and pass `db` into 
 
 ## Database & Connection Pooling Rules
 
-Include this section only when the discovered project uses SQLAlchemy async engines with
-PostgreSQL connection pooling behavior that needs special handling, such as PgBouncer
-with `postgresql+asyncpg`. Make this the canonical backend implementation rule.
+Include this section only when the discovered project connects through a connection pooler
+in **transaction or statement** pooling mode (e.g. PgBouncer, RDS Proxy, pgcat, Supavisor)
+AND uses an async driver that relies on server-side prepared statements (e.g. asyncpg,
+asyncmy). Make this the canonical backend implementation rule. If the project uses
+session-mode pooling, no pooler, or a driver that does not use server-side prepared
+statements, OMIT this section entirely — do not emit dead rules.
 
-When PgBouncer transaction pooling + asyncpg is detected, preserve these facts if supported
+When such a pooler + prepared-statement async driver is detected (the common case being
+PgBouncer transaction pooling + `postgresql+asyncpg`), preserve these facts if supported
 by the project's architecture/source docs:
 
 - `prepared_statement_name_func` with unique names is the actual prepared-statement collision fix; `statement_cache_size=0` alone is not sufficient.
@@ -1055,5 +1059,6 @@ Run these checks after generating all files:
 - [ ] Alembic/PostgreSQL-specific checks use Docker/Postgres rather than SQLite when PostgreSQL behavior matters
 - [ ] If PgBouncer/pooler + asyncpg behavior is discovered, `AGENTS.md` contains only a one-line routing hint, `backend-patterns` contains the full implementation rule, and `testing-quality-gates` contains verification-only guidance
 - [ ] If asyncpg prepared-statement collision handling is discovered, generated backend guidance states that unique `prepared_statement_name_func` is the fix, the three settings live in `connect_args`, web and worker engines are covered, SQLite is exempt, and migrations bypass PgBouncer/poolers when required by the architecture
+- [ ] If no pooler / session-mode pooling / non-prepared-statement driver is discovered: the connection-pooling section is **absent** from `backend-patterns` (no dead rules), and `AGENTS.md` / `testing-quality-gates` carry no pooling routing hint
 
 Output the generated files with minimal duplication and strong ownership boundaries so Codex spends fewer tokens rediscovering the same project facts.
