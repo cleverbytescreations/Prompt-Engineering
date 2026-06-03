@@ -1,0 +1,1022 @@
+
+Files to refer:
+---------------
+1. Docs/Solution-Architecture-Document.md
+2. Docs/implementation-plan.md
+
+please validate the skills, hooks and commands based on the following prompts are aligning with the architecture & tasks. If there are any change required, please update respective MD files.
+
+##########################################
+
+# Prompt: Generate Claude Code Configuration for a New Project
+
+You are setting up Claude Code configuration for a software project from scratch.
+Before generating anything, **read the project** to discover its actual structure:
+
+1. Read `README.md` (or root-level docs) — domain, purpose, users
+2. List the root directory to find top-level folders
+3. Read `package.json` / `pyproject.toml` / `requirements.txt` to identify exact tech stack
+4. Identify: frontend framework, backend framework, database(s), cache, queue, search,
+   object storage, linter(s), test runner(s), migration tool, i18n library
+5. Check if a `Docs/` (or `docs/`) folder exists and list its contents
+6. Find the task checklist file (commonly `Docs/tasks.md` or similar)
+7. Confirm the absolute path to the backend directory (needed for PostToolUse ruff hook)
+8. Confirm the relative path to the frontend directory (needed for ts-diagnostics hook)
+
+Then generate every file below. Every detail must come from what you found —
+never use placeholder names, never copy content from another project.
+
+---
+
+## Ownership rules (read before generating anything)
+
+Each fact has exactly ONE canonical home. Violations cost tokens every conversation.
+
+| Fact | Canonical file |
+|---|---|
+| Cache/DB slot assignments | architecture skill |
+| No-separate-vector-DB rule | architecture skill |
+| Transactional outbox full spec | backend-patterns skill |
+| Cross-cutting principles (AI role, moderation) | CLAUDE.md |
+| Frontend conventions | frontend-guidelines skill |
+
+When a skill needs to reference a fact it does not own, write one sentence:
+"See **[owning skill]** for [topic]." — never copy the content.
+
+---
+
+## File 1: `CLAUDE.md` (project root)
+
+Maximum 65 lines. This is a routing document, not a knowledge base.
+
+```markdown
+# CLAUDE.md
+
+## Project Summary
+[2–4 sentences: what the system does, who uses it, its primary domain]
+
+[Bullet list of core goals — 4-8 items max]
+
+Principles:
+[2–4 cross-cutting invariants that apply to every layer — one line each]
+[These are the ONLY place these principles appear across all files]
+
+## Tech Stack
+Frontend: [exact libraries]
+Backend: [exact framework + ORM + auth]
+Data: [databases, search, object storage]
+Infra: [cache, queue, container tooling]
+
+## Skill Routing
+Use `architecture-deep-dive` for [list trigger topics — architecture, workflows,
+  scalability, search/RAG design, storage, caching strategy].
+Use `frontend-guidelines` for all work inside `[frontend_dir]/`, including
+  [list: UI, forms, state, mocks, API contracts].
+Use `backend-patterns` for [framework] backend design, services, repositories,
+  async processing, and integration patterns.
+
+## Key Rules
+[6–10 one-line invariants that cross layers — no explanations, no detail]
+[Each rule that has full detail in a skill gets ONE line here as a routing hint]
+[Example format:]
+- CQRS: writes → [transactional DB]; search/discovery → [search system]
+- All [content type] is pending until moderated; never bypass the queue
+- Transactional outbox: domain events write to `[table]` in the same DB transaction
+- [Cache]: db=0 broker · db=1 [use] · db=2 [use] — never mix
+- Heavy tasks ([list]) are always async via [worker]
+- `[DEMO_ENV_VAR]=true` enables [mock library]
+
+## Code navigation policy
+
+Prefer LSP for `.[primary_lang_ext]` symbol lookup; use Grep only as fallback
+for config strings, comments, or non-symbol literals.
+```
+
+---
+
+## File 2: `.claude/skills/architecture-deep-dive/SKILL.md`
+
+```markdown
+---
+name: architecture-deep-dive
+description: Use for system architecture, module boundaries, scalability, search design,
+  AI/RAG design, storage separation, async/event-driven workflows, and platform evolution.
+---
+
+# Architecture Deep Dive
+
+Use this skill when the task involves:
+[bullet list of trigger scenarios — architecture, search, RAG, caching, scaling, events]
+
+## Project Architecture Baseline
+
+[1–2 sentences describing the platform and its core domain]
+
+Core capabilities:
+[4–6 bullets — the primary things the system does]
+
+Core principle:
+See **CLAUDE.md → Principles** for cross-cutting constraints.
+
+## Core Architecture
+
+### Transaction System
+Use [DB] as the source of truth for:
+[bullet list of what lives in the transactional DB — users, orgs, content metadata,
+ moderation state, etc.]
+
+### Search System
+[Describe the search backend, indexing strategy, and scoring approach]
+[State clearly: is there a separate vector DB or is it unified? ONE canonical statement here]
+[Index naming convention, content types indexed, field structure]
+
+### AI / Semantic Layer
+[What gets embedded, what model, batch size, what stays OUT of the vector store]
+[No repeat of the "no separate vector DB" statement — covered in Search System above]
+
+### Document / Content Lifecycle
+[Any content-status fields (active/retracted/superseded), what they affect]
+
+### Object Storage
+Use [S3/MinIO/Azure Blob] for: [list of asset types]
+
+### Cache / Queue
+[THIS IS THE CANONICAL LOCATION FOR CACHE SLOT DEFINITIONS]
+Use [Redis/equivalent] with [N] dedicated slots:
+- **db=N** — [purpose] ([TTL, eviction policy, key pattern])
+- **db=N** — [purpose] ([TTL, eviction policy, key pattern])
+Do not mix data across slots.
+
+### Event / Async Layer
+Use the **transactional outbox pattern** — full implementation spec in
+**backend-patterns skill**. [Mention upgrade path, e.g. Kafka later if applicable]
+
+Use async/event-driven flows for: [list heavy operations]
+
+## Architecture Principles
+
+[4–6 named principles with 1–2 sentences each, specific to this project]
+### [Name]
+[Rule + brief rationale]
+
+## Preferred Patterns
+
+### [Pattern name]
+[Short description — e.g. CQRS-lite, hybrid search, event-driven processing]
+
+## Canonical Workflows
+
+### [Primary workflow 1]
+[Step 1] → [Step 2] → ... (one line per workflow, 3–6 workflows total)
+
+## Scalability Thresholds
+
+[At what scale does each component need to evolve — specific numbers if known]
+
+## When giving architecture advice
+
+Always:
+[4–6 bullets: explain tradeoffs, simplest viable first, domain-specific constraints]
+
+## Output Style
+
+Prefer: module breakdown, component interaction list, sequence steps,
+deployment evolution plan, risks/tradeoffs/recommendations
+```
+
+---
+
+## File 3: `.claude/skills/backend-patterns/SKILL.md`
+
+```markdown
+---
+name: backend-patterns
+description: Use for [framework] backend design, clean architecture, services,
+  repositories, async workflows, queues, caching, [domain]-specific processing,
+  and scalable backend implementation.
+---
+
+# Backend Patterns
+
+Use this skill when the task involves:
+[bullet list — framework design, module structure, service/repo boundaries,
+ database interaction, async processing, cache, AI orchestration, API design]
+
+## Backend Baseline
+
+Preferred stack:
+- [framework + version]
+- [ORM / query builder]
+- [validation library]
+- [auth approach]
+- [cache]
+- [queue / worker]
+
+## Backend Architecture Rule
+
+Use clean layering:
+1. **API layer** — `[path: backend/app/api/v1/endpoints/<domain>.py]` — HTTP concerns only: parse request, call service, return response
+2. **Service layer** — `[path: backend/app/services/<domain>_service.py]` — business logic, orchestration, state machine transitions, outbox event creation
+3. **Repository layer** — `[path: backend/app/repositories/<domain>_repository.py]` — all SQLAlchemy queries; receives `AsyncSession`; returns ORM models or scalars
+4. **Model/data layer** — `[path: backend/app/models/]` — ORM definitions only
+
+API → Service → Repository → Model. Services own sessions and pass `db` into repository functions. No SQLAlchemy `select()`/`insert()`/`update()`/`delete()` in service or endpoint files.
+
+## API Design Rules
+[4–6 rules on endpoint conventions, typed schemas, auth, response shape]
+
+## Service Layer Rules
+[5–7 rules covering:
+- services own their sessions: `async with get_[tenant]_session(schema) as db:`
+- one service file per domain: `<domain>_service.py`
+- service function signatures never receive an `AsyncSession` param — they open the session internally
+- services own business logic, validation, state transitions, outbox event creation — not HTTP concerns
+- services must NOT contain `select()`/`insert()`/`update()`/`delete()` — delegate all DB access to the domain repository
+- services open the session and pass `db` to repository functions: `result = await <domain>_repo.get_by_id(db, id)`
+- a service may call repositories from multiple domains within one session for cross-domain orchestration]
+
+## Repository Layer Rules
+[6–8 rules covering:
+- one file per domain: `backend/app/repositories/<domain>_repository.py`
+- all functions are `async def`, accept `db: AsyncSession` as first param, return ORM model(s) or scalar values
+- no business logic in repositories — only query construction, execution, and result mapping
+- no `HTTPException` in repositories — raise `ValueError` or return `None`; the service decides how to handle it
+- repositories are stateless — use module-level functions, not class instances with internal state
+- sessions are always opened by the service, never inside a repository function
+- always use `await db.execute(select(...))` pattern — never sync queries
+
+Canonical function signatures to include as a code block:
+```python
+async def get_by_id(db: AsyncSession, entity_id: UUID) -> <Model> | None: ...
+async def list_with_filters(db: AsyncSession, filters: <FilterSchema>) -> list[<Model>]: ...
+async def create(db: AsyncSession, data: dict) -> <Model>: ...
+async def update(db: AsyncSession, entity: <Model>, changes: dict) -> <Model>: ...
+async def delete(db: AsyncSession, entity_id: UUID) -> None: ...
+```]
+
+## Async / Background Rules
+
+Use background workers for: [list — OCR, indexing, embedding, notifications, etc.]
+Do not block request/response cycles with heavy work.
+
+Typical pattern:
+1. accept request
+2. persist initial state
+3. enqueue async job
+4. return status or job-tracking response
+
+## Redis Rules
+
+[General Redis usage rules — what Redis is for, what it's NOT for]
+
+### Redis DB Slot Strategy
+See **architecture-deep-dive skill → Cache / Queue** for canonical DB slot assignments
+and TTL rules.
+
+## Search / AI Integration Rules
+
+[How backend orchestrates the search/AI stack — which system owns what]
+[Do NOT repeat the no-separate-vector-DB statement — it lives in the architecture skill]
+
+### [SearchCacheService or equivalent]
+[Implementation spec: key pattern, TTL, invalidation, middleware integration]
+
+## OCR / AI Workflow Rules
+
+[Step-by-step backend flow for the primary AI/document pipeline specific to this project]
+[e.g. upload → store → moderation → OCR → chunk → embed → index]
+
+## Transactional Outbox Pattern
+
+[THIS IS THE CANONICAL LOCATION FOR THE FULL OUTBOX SPEC]
+All domain events ([list event types]) must:
+1. Write an `[outbox_table]` row in the same [DB] transaction as the state change
+2. Never dispatch [queue jobs] directly from the API handler without the outbox
+
+Outbox polling worker (`[worker_file_path]`, [scheduler] every [interval]) reads
+[PENDING] events → dispatches to [queue] → sets [PUBLISHED/FAILED/DEAD_LETTER] after
+[N] retries. Guarantees no lost jobs on API crash.
+
+## Polymorphic Data Patterns (if applicable)
+
+[Any polymorphic tables — reactions, bookmarks, comments — with entity_type conventions]
+
+## Security Rules
+[RBAC, org-level access, audit requirements — specific to this project's domain]
+
+## Performance Rules
+[async I/O, caching, batching, read/write separation — 4–5 rules]
+
+## Error Handling Rules
+[Structured errors, distinction between error categories, async failure modes]
+```
+
+---
+
+## File 4: `.claude/skills/frontend-guidelines/SKILL.md`
+
+```markdown
+---
+name: frontend-guidelines
+description: Use for all work inside [frontend_dir]/, including [framework], TypeScript,
+  [ui_library], [data_fetching_lib], forms, mocks, API contracts, and UI task execution.
+---
+
+# Frontend Guidelines
+
+Use this skill when the task involves:
+[bullet list — page creation, components, forms, state, mock APIs, routing, typing, i18n]
+
+## Scope Rules
+- All frontend work must stay inside `[frontend_dir]/`
+- Do not create files outside `[frontend_dir]/` unless adding root-level docs
+- Use the existing module structure
+
+## Frontend Stack
+[List exact packages: framework, UI library, data fetching, state, forms,
+ validation, mocks/demo, i18n]
+
+## Import Rules
+- Use `[path_alias]/` for imports (e.g. `@/`)
+- Avoid deep relative imports across module boundaries
+
+## UI Design Rules
+- Prefer [UI library] for interactive elements — [list: buttons, inputs, dialogs, etc.]
+- Use [CSS approach] mainly for layout and spacing
+[Any domain-specific badge/display rules for content status fields]
+
+## Component Rules
+- [Naming convention] file names
+- One component per file unless a very small local helper is justified
+- Keep components presentation-focused; no business logic in UI
+
+## Data Fetching Rules
+- API calls go through [React Query / SWR / equivalent]
+- Prefer typed API client functions in `[lib/api path]`
+- Align request/response types with the implementation plan
+
+## Forms Rules
+- Use [form library] with [validation library]
+- Keep validation schemas explicit
+- Surface validation errors clearly in UI
+
+## State Rules
+- Use [state library] only for [list: auth, role, lightweight shared UI state]
+- Do not move server state into [state store] when [data fetching lib] is the right tool
+
+## Mock / Demo Mode Rules
+When `[DEMO_ENV_VAR]=true`:
+- Use [MSW / equivalent] handlers
+- Handlers must match actual API contract shape
+- Include realistic latency ([N–N]ms)
+- Use realistic fixture data
+
+## Source of Truth
+- `[Docs/ui-tasks.md path]` — task checklist
+- `[Docs/ui-implementation-plan.md path]` — API contract source of truth
+
+## Directory Guidance
+
+[Map the intended grouping for each concern:]
+- pages/routes → `app/` or `pages/`
+- reusable UI → `components/`
+- data hooks → `hooks/`
+- API helpers → `lib/api/`
+- global state → `store/`
+- shared types → `types/`
+- mocks → `mocks/`
+
+### Key shared components (place in `components/shared/`)
+[List 3–5 truly shared components with file names and what API they call]
+
+### Key pages / routes
+[List 5–10 important routes with component names and file paths]
+
+### Key feature components (place in module directories)
+[List 3–5 domain-specific components with target directories]
+
+## When generating frontend output
+Prefer: exact file paths, minimal production-usable code, typed props,
+reusable patterns aligned to current structure, short placement explanation
+
+## Avoid
+[4–6 anti-patterns specific to this project's stack]
+```
+
+---
+
+## File 5: `.claude/hooks/prefer_lsp.py`
+
+Adapt the extensions list to match this project's primary languages.
+
+```python
+#!/usr/bin/env python3
+import json
+import sys
+
+data = json.load(sys.stdin)
+
+tool_input = data.get("tool_input", {}) or {}
+
+candidates = []
+for key in ("path", "paths", "glob", "pattern", "query", "include"):
+    value = tool_input.get(key)
+    if isinstance(value, str):
+        candidates.append(value)
+    elif isinstance(value, list):
+        candidates.extend(str(v) for v in value)
+
+text = " ".join(candidates).lower()
+
+# Adjust extensions to match the project's primary typed languages
+lsp_exts = ("[.ext1]", "[.ext2]")   # e.g. (".ts", ".tsx", ".py")
+
+if any(ext in text for ext in lsp_exts):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": (
+                "For [language] code navigation, use the LSP tool instead of Grep. "
+                "Prefer definitions, references, symbols, hover/type info, diagnostics. "
+                "Use Grep only as a fallback when LSP cannot answer."
+            )
+        }
+    }))
+
+sys.exit(0)
+```
+
+---
+
+## File 6: `.claude/hooks/ts-diagnostics.sh` (adapt per language)
+
+Prerequisite: `jq` must be installed (`apt install jq` / `brew install jq`).
+The script checks for jq at runtime and exits silently if unavailable.
+
+**For TypeScript projects:**
+
+```bash
+#!/bin/bash
+# Runs tsc --noEmit after every Edit/Write on a .ts/.tsx file.
+# Exits 2 when errors found so Claude is forced to address them.
+
+INPUT=$(cat)
+
+# jq is required to parse tool input — skip silently if unavailable
+if ! command -v jq &>/dev/null; then
+  exit 0
+fi
+
+FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+
+if [[ ! "$FILE" =~ \.(ts|tsx)$ ]]; then
+  exit 0
+fi
+
+FRONTEND_DIR="./[frontend_dir]"   # relative to project root
+if [ ! -d "$FRONTEND_DIR" ]; then
+  exit 0
+fi
+
+DIAG=$(cd "$FRONTEND_DIR" && npx tsc --noEmit --pretty false 2>&1)
+TSC_EXIT=$?
+
+if [ $TSC_EXIT -eq 0 ]; then
+  exit 0
+fi
+
+echo "TypeScript errors detected after editing: $FILE"
+echo ""
+echo "$DIAG" | head -50
+exit 2
+```
+
+**For Python-only projects:** replace tsc with `mypy [module] --ignore-missing-imports`.
+**For Go/Rust/Java:** replace with the language's type checker / build tool.
+
+---
+
+## File 7: `.claude/commands/` — nine slash commands
+
+For every command, replace ALL placeholders below with project-specific values.
+Run `ls` on each referenced directory to verify the path exists before writing.
+
+| Placeholder | Replace with |
+|---|---|
+| `[project_name]` | actual project name |
+| `[backend_dir]` | actual backend path (e.g. `backend/`) |
+| `[models_path]` | model file pattern (e.g. `backend/app/models/<domain>.py`) |
+| `[schemas_path]` | schema file pattern (e.g. `backend/app/schemas/<domain>.py`) |
+| `[services_path]` | service file pattern (e.g. `backend/app/services/<domain>_service.py`) |
+| `[repositories_path]` | repository file pattern (e.g. `backend/app/repositories/<domain>_repository.py`) |
+| `[endpoints_path]` | endpoints pattern (e.g. `backend/app/api/v1/endpoints/<domain>.py`) |
+| `[workers_path]` | worker/task pattern (e.g. `backend/app/workers/tasks/<domain>.py`) |
+| `[migration_tool]` | actual tool (alembic / prisma / flyway / etc.) |
+| `[autogenerate_cmd]` | migration autogenerate subcommand (e.g. `revision --autogenerate`) |
+| `[migration_dir]` | migration versions directory (e.g. `backend/alembic/`) |
+| `[linter_cmd]` | lint check command with flags (e.g. `cd backend && ruff check app/ -q`) |
+| `[linter_autofix_cmd]` | lint auto-fix command (e.g. `cd backend && ruff check app/ --fix -q`) |
+| `[type_checker_cmd]` | type check command (e.g. `cd backend && mypy app/ --ignore-missing-imports`) |
+| `[test_cmd]` | test command with flags (e.g. `cd backend && pytest tests/ -x -q`) |
+| `[test_dir]` | test directory path (e.g. `backend/tests/`) |
+| `[tasks_file]` | checklist file path (e.g. `Docs/tasks.md`) |
+| `[checklist_file]` | git-committed checklist file for `git add` |
+
+---
+
+### `fix-error.md`
+```markdown
+# /fix-error
+
+Efficiently diagnose and fix a specific error without reading unrelated code.
+
+## Argument
+Paste the error/traceback after the command: `/fix-error <traceback>`
+
+## Instructions
+
+### Step 1 — Parse the traceback
+Extract: exact file and line number, error type and message, any chained cause.
+
+### Step 2 — Read only what's needed
+- Use `Read` with `offset` and `limit` to read ±20 lines around the failing line.
+- Use `LSP hover` on the failing symbol to check its type/signature.
+- Use `LSP goto_definition` if the error is about a missing or mistyped attribute.
+
+### Step 3 — Fix
+Apply the minimal change. Do not refactor surrounding code.
+
+### Step 4 — Verify
+```bash
+cd [backend_dir] && [test_cmd] <specific_test>::<test_name> -x -q
+```
+
+### Step 5 — Report
+One sentence: what was wrong and what was changed. File:line reference.
+
+## Token rules
+- Never read a file in full to find a bug — always use line-targeted `Read`.
+- Never re-read a file you just edited.
+- If the error is in a dependency, find the last frame that IS your code.
+```
+
+---
+
+### `impl-phase.md`
+```markdown
+# /impl-phase
+
+Implement the next incomplete phase of the [project_name], following the plan exactly.
+
+## Argument
+Pass the phase number: `/impl-phase 3`
+If no argument given, detect the next incomplete phase from `[tasks_file]`.
+
+## Instructions
+
+### Step 1 — Scope
+Read only the relevant phase section from `[tasks_file]`.
+Do NOT re-read the full implementation plan — all architecture context is in `CLAUDE.md`.
+
+### Step 2 — Navigate with LSP, not file search
+- Use `LSP goto_definition` to find base classes, imported symbols.
+- Use `LSP find_references` before modifying shared utilities.
+- Use `LSP hover` to check types and signatures.
+- Only use `Read` with `offset`+`limit` for a known file section.
+
+### Step 3 — Implementation order (always follow this sequence)
+1. ORM models → `[models_path]`
+2. [migration_tool] migration: generate → review → apply
+3. Schemas → `[schemas_path]`
+4. Repository → `[repositories_path]` (all queries here; no raw queries in service)
+5. Service layer → `[services_path]` (calls repository; owns session and business logic)
+6. API endpoints → `[endpoints_path]`
+7. Register router if new endpoint file
+8. Worker/Celery tasks → `[workers_path]`
+
+### Step 4 — Quality gates (run after each file)
+```bash
+[linter_cmd]
+[type_checker_cmd]
+```
+
+### Step 5 — Test
+```bash
+[test_cmd]
+```
+
+### Step 6 — Update checklist
+Mark completed items `[x]` in `[tasks_file]`.
+Update phase status line and `## Overall Progress` table.
+
+## Token-saving rules
+- Do not re-read files you just wrote.
+- Do not read the full implementation plan — use `CLAUDE.md`.
+- Batch related edits in one `Edit` call where possible.
+- Stop and confirm before any destructive DB operations.
+```
+
+---
+
+### `lint-fix.md`
+```markdown
+# /lint-fix
+
+Run linter and type checker, then fix all issues found.
+
+## Instructions
+
+1. Auto-fix safe issues:
+   ```bash
+   [linter_autofix_cmd]
+   ```
+
+2. Run type checker:
+   ```bash
+   [type_checker_cmd]
+   ```
+
+3. Fix remaining errors manually:
+   - Use LSP `hover` to check types before adding annotations
+   - Do not suppress with ignore comments unless truly unavoidable
+
+4. Confirm clean:
+   ```bash
+   [linter_cmd] && echo "OK"
+   ```
+
+5. Report: count fixed, any remaining issues with file:line.
+```
+
+---
+
+### `migrate.md`
+```markdown
+# /migrate
+
+Generate and apply a [migration_tool] migration.
+
+## Argument
+Pass migration name: `/migrate <name>`
+
+## Instructions
+
+1. Check current state:
+   ```bash
+   cd [backend_dir] && [migration_tool] current
+   ```
+
+2. Generate:
+   ```bash
+   cd [backend_dir] && [migration_tool] [autogenerate_cmd] -m "$ARGUMENT"
+   ```
+
+3. **Review the generated file** before applying:
+   - Confirm `upgrade()` creates expected tables/columns
+   - Confirm `downgrade()` reverses cleanly
+   [Add any project-specific review rules here]
+
+4. Apply:
+   ```bash
+   cd [backend_dir] && [migration_tool] upgrade head
+   ```
+
+5. Verify:
+   ```bash
+   cd [backend_dir] && [migration_tool] current
+   ```
+
+6. If migration fails: downgrade first, fix model, regenerate.
+   Never edit the DB directly — always go through [migration_tool].
+```
+
+---
+
+### `new-endpoint.md`
+```markdown
+# /new-endpoint
+
+Scaffold a new API endpoint following the [project_name] pattern.
+
+## Argument
+`/new-endpoint <domain> <verb> <resource>`
+
+## Endpoint Pattern (do not deviate)
+
+### 1. Schema — `[schemas_path]`
+```python
+class <Resource>Create(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    # fields
+
+class <Resource>Response(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: [id_type]
+    created_at: datetime
+    # fields
+```
+
+### 2. Repository query — `[repositories_path]`
+```python
+async def get_<resource>(db: AsyncSession, [params]) -> <Model> | None: ...
+async def create_<resource>(db: AsyncSession, data: dict) -> <Model>: ...
+```
+
+### 3. Service method — `[services_path]`
+```python
+async def <action>_<resource>([schema_param], [payload]) -> <Resource>Response:
+    async with get_[tenant]_session(schema) as db:
+        result = await <domain>_repo.<action>_<resource>(db, ...)
+        # business logic here
+        return result
+```
+
+### 4. Route — `[endpoints_path]`
+```python
+@router.[method]("[actual_path]", response_model=<Resource>Response, status_code=[N])
+async def <action>_<resource>(
+    [actual_auth_dependency],
+    [actual_params],
+):
+    return await [domain]_service.<action>_<resource>(...)
+```
+
+## Instructions
+1. Use `LSP goto_definition` on nearest existing endpoint to confirm imports — do NOT re-read whole file.
+2. Add schema, repository query, service method, and route with single `Edit` per file.
+3. Run: `[linter_cmd]`
+4. Report what was added (4 locations).
+```
+
+---
+
+### `phase-status.md`
+```markdown
+# /phase-status
+
+Show current phase and exact next tasks.
+
+## Instructions
+
+1. Read `[tasks_file]` — focus only on the first phase marked incomplete.
+2. List every unchecked `[ ]` item grouped by section.
+3. Summarise parallel vs sequential work.
+4. Output prioritised work order — **no implementation, just the plan**.
+
+Keep output under 40 lines.
+```
+
+---
+
+### `run-tests.md`
+```markdown
+# /run-tests
+
+Run the CMS test suite and report results.
+
+## Argument
+Optional: `/run-tests unit` | `/run-tests integration` | `/run-tests all`
+Default: full suite.
+
+## Instructions
+
+> All tests run **inside Docker** via `docker compose exec api`. Never run pytest
+> directly on the host — the host has no app Python environment.
+
+1. Verify the api container is running:
+   ```bash
+   docker compose ps api
+   ```
+   If it shows anything other than `Up`, run `docker compose up -d api` first.
+
+2. List test files:
+   ```bash
+   docker compose exec api ls tests/
+   ```
+
+3. Run the full suite with short tracebacks:
+   ```bash
+   docker compose exec api pytest tests/ -x -q --tb=short 2>&1 | tail -60
+   ```
+
+   Scoped variants:
+   ```bash
+   # Unit tests only (service + schema + helper files, no live DB/Redis)
+   docker compose exec api pytest tests/ -x -q --tb=short -k "not integration" 2>&1 | tail -60
+
+   # A single file
+   docker compose exec api pytest tests/<file>.py -x -q --tb=short 2>&1 | tail -60
+   ```
+
+4. If tests fail:
+   - Read only the failing test file and the service/module it targets.
+   - Fix the root cause — do not mock away real failures.
+   - Re-run the specific failing test to confirm the fix before re-running the suite:
+     ```bash
+     docker compose exec api pytest tests/<file>.py::<TestClass>::<test_name> -x -v 2>&1 | tail -40
+     ```
+
+5. Report: pass/fail count, any skipped tests and why, next step if red (specific file:line).
+```
+
+---
+
+### `session-end.md`
+```markdown
+# /session-end
+
+Wrap up: verify work, update checklist, commit.
+
+## Argument
+Pass the phase number: `/session-end 3`
+
+## Instructions
+
+### 1. Verify lint is clean
+```bash
+[linter_cmd] && echo "OK"
+```
+
+### 2. Run tests
+```bash
+[test_cmd] --tb=short 2>&1 | tail -15
+```
+Do not commit if tests are red.
+
+### 3. Update checklist
+Run `/update-checklist $PHASE` — mark all verified tasks `[x]`.
+
+### 4. Commit
+```bash
+git status
+git add [backend_dir] [migration_dir] [checklist_file]
+git commit -m "Phase $PHASE: <summary>"
+```
+
+### 5. Session summary (max 10 lines)
+```
+Phase N — <name>
+Files added : <count> (<list>)
+Files edited: <count> (<list>)
+Tests       : <pass>/<total>
+Checklist   : <X> tasks marked complete
+Next session: Phase N+1 — <first task>
+```
+```
+
+---
+
+### `update-checklist.md`
+```markdown
+# /update-checklist
+
+Verify and mark completed tasks in the checklist.
+
+## Argument
+Pass phase number: `/update-checklist 3`
+
+## Instructions
+
+1. Read only the relevant phase section from `[tasks_file]`.
+
+2. For each task, verify completion using LSP:
+   - ORM models: symbol exists in `[models_path]`
+   - Schemas: symbol exists in `[schemas_path]`
+   - Repository: functions exist in `[repositories_path]`
+   - Services: function exists in `[services_path]` (confirm no raw `select()`/`insert()`/`update()`/`delete()` calls)
+   - API endpoints: route exists in `[endpoints_path]`
+
+3. Mark verified items `[x]`. Leave unverified items `[ ]`.
+
+4. If all items in a phase are `[x]`:
+   - Change phase header from `📅` to `✅`
+   - Add: `> **Phase N completed:** YYYY-MM-DD`
+   - Update `## Overall Progress` table
+
+5. Save all changes in a single `Edit` call.
+
+## Token rule
+Read only the phase section — never the full checklist.
+```
+
+---
+
+## File 8: `.claude/settings.json`
+
+Remove all `//` comment lines before saving — JSON does not support inline comments.
+Verify every path in `allow` exists in this project before writing.
+
+```json
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash([test_runner_cmd]:*)",
+      "Bash([migration_tool]:*)",
+      "Bash([frontend_build_cmd] *)",
+      "Bash(docker compose:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "mcp__plugin_playwright_playwright__browser_network_requests",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "Edit(/.claude/skills/**)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/prefer_lsp.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/ts-diagnostics.sh"
+          },
+          {
+            "type": "command",
+            "command": "cd \"[ABSOLUTE_BACKEND_PATH]\" && [linter_cmd] 2>&1 | head -15 || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== Session End ===' && echo 'Run /update-checklist to mark completed tasks.' && echo 'Run: git add -p && git commit' && echo '=================='"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+## File 9: `.claude/settings.local.json`
+
+User-specific permissions that must NOT be committed to the repository.
+Create this file alongside `settings.json` and add it to `.gitignore`.
+
+Typical entries for this file:
+- User home directory read access (`Read(//c/Users/**)` on Windows, `Read(/home/[user]/**)` on Linux)
+- WSL mount paths (`Read(//mnt/c/**)`)
+- Personal tool paths not shared by the team
+- One-off `Bash(...)` entries added during debugging sessions
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/**)",
+      "Read(//mnt/c/**)"
+    ]
+  }
+}
+```
+
+---
+
+## Final validation checklist
+
+Run these checks after generating all files:
+
+- [ ] Search `"Redis"` across all files — DB slot table appears in **one file only** (architecture skill)
+- [ ] Search `"vector"` — "no separate vector DB" appears in **one file only** (architecture skill)
+- [ ] Search `"outbox"` — full outbox spec appears in **one file only** (backend-patterns skill)
+- [ ] Search for domain principles — appear only in `CLAUDE.md`
+- [ ] Search `"Grep"` in `CLAUDE.md` — must be one sentence, not a paragraph
+- [ ] Grep all command files for any placeholder `[...]` still unreplaced
+- [ ] Grep all command files for any path that does NOT exist in this project's folder structure
+- [ ] `settings.json` `PostToolUse` ruff hook path resolves to an actual directory — run `ls` to verify
+- [ ] `settings.json` contains no `//` comment lines — validate with a JSON linter
+- [ ] `settings.local.json` is listed in `.gitignore`
+- [ ] `ts-diagnostics.sh` FRONTEND_DIR value matches the actual frontend folder name
+- [ ] No command file contains the name of a previous or unrelated project
+- [ ] `CLAUDE.md` is under 65 lines
+- [ ] Search `"select("` and `"insert("` in `[services_path]` — must return zero results; all queries must be in repositories
+- [ ] Grep `[repositories_path]` — verify at least one repository file exists per domain that has a service

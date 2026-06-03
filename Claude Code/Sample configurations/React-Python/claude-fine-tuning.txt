@@ -1,0 +1,57 @@
+
+
+>>>>>>
+please check and let me know the CLAUDE specific settins are updated properly for efficient code changes & saving tokens / cost during feature implementation. If there is gap, let me know wjhat are the changes required
+
+1. CLAUDE.md
+2. Skills, hooks and commands
+
+>>>>>
+please fix these recommendations if you are sure that this will save token and costs.
+
+OUTPUT:
+------
+Changes Made
+1. prefer_lsp.py — deny ? soft warn
+Claude now sees the LSP guidance on stderr but isn't hard-blocked. Previously a hard deny caused Claude to try LSP, fail to find config strings/literals, then burn tokens on retries. Now it self-corrects in one step.
+
+2. hooks/ruff-check.py — new Python hook (replaces shell command)
+Only fires ruff when the edited file ends in .py. Every previous Edit/Write on .md, .json, .tsx, migration files, alembic.ini, etc. was triggering a full ruff check app/ scan — wasted subprocess cost every time.
+
+3. settings.json — PostToolUse ruff uses the new script
+Swapped the shell command for ruff-check.py.
+
+4. settings.local.json — removed dead WSL paths
+Read(//c/Users/**) and Read(//mnt/c/**) are Linux-style paths that have no effect on Windows 11. Cleaned to an empty allow list.
+
+5. CLAUDE.md — added global file-reading and token budget rules
+These rules now apply in every conversation, not just inside /impl-phase and /fix-error. Prevents full-file reads during ad-hoc questions, which is where most unintentional token spend happens.
+
+6. frontend-guidelines/SKILL.md — reminder to update feature dirs
+Added a one-line prompt so the feature directory list gets updated each phase rather than silently becoming stale.
+
+
+>>>>>>
+Files to refer:
+1. Docs\claude-agent-settings-prompt.txt
+
+Above file is a reverse engineered prompt for generating all the CLAUDE specific settings (CLAUDE.md, skills, hooks, commands etc) for a new project. Please validate this propmpt & update, if necessary, to generate the settings (CLAUDE.md, skills, hooks, commands etc), if I run it through am AI tool like codex or claude code.
+
+OUTPUT:
+------
+All 8 issues fixed. Here's the complete summary of what changed and why:
+
+What Was Changed in the Prompt File
+#	Location	Change	Why
+1	File 5: prefer_lsp.py	Hard permissionDecision: "deny" ? soft stderr warn + exit 0	Hard deny causes wasted retry tokens when Grep IS the right tool (config strings, comments). Soft warn lets Claude self-correct once.
+2	New File 6: ruff-check.py	Added new hook file template	Without a .py guard, ruff fires on every Edit/Write including markdown, JSON, migrations — wasted subprocess cost on every non-Python save.
+3	File 9: settings.json PostToolUse	Inline shell ruff command ? ruff-check.py script	Consistent with fix #2; also eliminates the pipe/head fragility in shell.
+4	File 9: settings.json allow list	"Bash([test_runner_cmd]:*)" format ? actual working patterns	The colon-wildcard format is invalid. Used the proven patterns from the CMS project.
+5	File 9: settings.json	Added additionalDirectories	Without this Claude can't read/write .claude/ files reliably in all permission modes.
+6	File 9: settings.json hooks	Added LSP(*) to allow list	LSP calls were missing — Claude would be prompted to approve every LSP call.
+7	File 10: settings.local.json	Empty allow list + explanatory note replacing pre-populated WSL paths	WSL paths (//c/Users/**, //mnt/c/**) do nothing on Windows. Starting empty prevents dead noise and confusion.
+8	CLAUDE.md template	Added File reading discipline + Token budget rules sections; limit 45?60	These are the highest-impact token-saving rules — must apply in all conversations, not just inside specific commands.
+9	Discovery step	Added Docker/compose check + OS/shell detection	Determines whether run-tests.md uses docker compose exec vs direct runner.
+10	File 7 (ts-diagnostics.sh)	Added Windows compatibility note	On Windows, bash isn't always in PATH — needs Git Bash path or a Python equivalent.
+11	run-tests.md	"CMS" ? [project_name]	Hardcoded project name would survive copy-paste into a new project.
+12	Final validation checklist	Added 8 new checks covering hooks correctness, settings, and placeholder sweep	The old checklist would pass a config that still had all the bugs above.
