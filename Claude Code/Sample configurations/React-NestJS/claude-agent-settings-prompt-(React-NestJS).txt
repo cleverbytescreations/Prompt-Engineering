@@ -1,0 +1,1806 @@
+# Prompt: Generate Claude Code Configuration for a React + Node.js/Fastify + PostgreSQL Project
+
+You are setting up Claude Code configuration for a software project from scratch.
+Before generating anything, **read the project** to discover its actual structure:
+
+1. Read `README.md` (or root-level docs) — domain, purpose, users
+2. List the root directory to find top-level folders
+3. Read `package.json` at the project root — identify workspace setup (monorepo or not)
+4. Read `package.json` inside the backend/server/api directory — identify exact packages:
+   Fastify version, ORM (Prisma vs Drizzle vs TypeORM), validation library (Zod vs TypeBox),
+   queue system (BullMQ vs Bull vs pg-boss), test runner (Vitest vs Jest), linter (ESLint vs Biome)
+   **ESLint version check (critical for hook generation):** inspect the `eslint` version field.
+   - ESLint v8.x → uses `.eslintrc.*` config; hook command: `npx eslint <file> --ext .ts -q`
+   - ESLint v9.x → uses `eslint.config.js` flat config; hook command: `npx eslint <file> -q`
+     (the `--ext` flag is removed in v9 — including it causes a fatal error)
+5. Read `package.json` in the frontend directory — confirm exact React, TanStack Query,
+   Zustand, Tailwind, and Router versions
+6. Identify: frontend dir name, backend dir name, PostgreSQL version, Redis version,
+   object storage (MinIO / S3 / Azure Blob), i18n library if any
+7. Check if `prisma/schema.prisma` exists, or identify the ORM schema file location
+8. Check if a `Docs/` (or `docs/`) folder exists and list its contents
+9. Find the task checklist file (commonly `Docs/tasks.md` or similar)
+10. Confirm the **absolute path** to the backend `src/` directory (needed for ESLint hook)
+11. Confirm the **relative path** to the frontend directory (needed for ts-diagnostics hook)
+
+Then generate every file listed below. Every detail must come from what you found —
+never use placeholder names, never copy content from another project.
+
+---
+
+## Ownership rules (read before generating anything)
+
+Each fact has exactly ONE canonical home. Violations waste tokens every conversation.
+
+| Fact | Canonical file |
+|---|---|
+| Redis DB slot assignments | architecture-deep-dive skill |
+| BullMQ queue names, concurrency, retry config | architecture-deep-dive skill |
+| Transactional outbox full spec | backend-patterns skill |
+| Prisma schema authoring rules and migration discipline | database-patterns skill |
+| Zod + Fastify type-provider wiring rules | api-contract-guidelines skill |
+| Cross-cutting principles | CLAUDE.md |
+| Frontend conventions | frontend-guidelines skill |
+
+When a skill needs to reference a fact it does not own, write exactly one sentence:
+"See **[owning skill]** for [topic]." — never copy the content.
+
+---
+
+## File 1: `CLAUDE.md` (project root)
+
+Maximum 60–65 lines. This is a routing document, not a knowledge base.
+The extra lines (vs. the original 45-line cap) are justified by the two additional
+sections: File reading discipline and the Hooks table — both reduce token cost every
+session by preventing Claude from re-reading files or using the wrong navigation tool.
+
+```markdown
+# CLAUDE.md
+
+## Project Summary
+[2–4 sentences: what the system does, who uses it, its primary domain]
+
+[Bullet list of core goals — 4–8 items max]
+
+Principles:
+[2–4 cross-cutting invariants that apply to every layer — one line each]
+[These are the ONLY place these principles appear across all files]
+
+## Tech Stack
+Frontend: [exact React version, TanStack Query version, Zustand version, Tailwind version, Router version]
+Backend: [Fastify version, ORM name+version, Zod/TypeBox version, @fastify/jwt or equivalent]
+Data: [PostgreSQL version, Redis version, object storage provider if any]
+Infra: [BullMQ version, Docker Compose, Nginx if present, observability tools]
+
+## Skill Routing
+Use `architecture-deep-dive` for system design, multi-tenancy patterns, BullMQ queue
+  topology, Redis slot strategy, scalability decisions, and event-driven workflows.
+Use `backend-patterns` for Fastify plugin design, service/repository layering,
+  BullMQ worker authoring, outbox pattern, integration adapters, and all backend
+  implementation work inside `[backend_dir]/src/`.
+Use `database-patterns` for Prisma schema authoring, migration generation and review,
+  transaction patterns, multi-tenant DB strategy, and query optimization.
+Use `api-contract-guidelines` for Zod schema design, Fastify type-provider wiring,
+  OpenAPI spec, error response shape, and API versioning.
+Use `frontend-guidelines` for all work inside `[frontend_dir]/`, including React
+  components, TanStack Query hooks, Zustand stores, Tailwind styling, and routing.
+Use `testing-quality-gates` for Vitest unit/integration tests, Supertest route tests,
+  React Testing Library component tests, fixture factories, and coverage configuration.
+
+## Key Rules
+[6–10 one-line invariants — no explanations, no detail]
+- Fastify plugins are the unit of route registration; never add routes outside a plugin
+- All DB access goes through the repository layer; no Prisma calls in services or routes
+- Transactional outbox: domain events write to `[outbox_table]` in the same DB transaction
+- Redis: db=0 broker · db=1 [use] · db=2 [use] — see architecture skill for full map
+- Heavy tasks ([list]) are always async via BullMQ; never block the Fastify request cycle
+- All protected routes declare `preHandler: [fastify.authenticate]`; roles use `requireRoles()`
+- `[DEMO_ENV_VAR]=true` enables MSW mock handlers in the frontend
+
+## Code navigation policy
+Prefer LSP for `.ts` and `.tsx` symbol lookup (both frontend and backend are TypeScript);
+use Grep only as fallback for config strings, comments, or non-symbol literals.
+
+## File reading discipline
+- Never read a file > 100 lines without `offset`+`limit` — always target the relevant section
+- Do not re-read a file immediately after writing it
+- Do not read the full implementation plan or checklist — read only the phase or section needed
+
+## Hooks (`.claude/hooks/`)
+All hooks are Python scripts — do not use `.sh` scripts (bash path resolution breaks on Windows).
+
+| Event | Matcher | Script | Behaviour |
+|---|---|---|---|
+| PreToolUse | `Grep` | `prefer_lsp.py` | Warns when Grep is used for a `.ts`/`.tsx` symbol LSP should handle |
+| PostToolUse | `Edit\|Write` | `ts-diagnostics.py` | Runs `tsc --noEmit` after `.ts`/`.tsx` edits in frontend or backend; exits 2 on errors |
+| PostToolUse | `Edit\|Write` | `eslint-check.py` | Runs ESLint after `.ts` edits in backend; exits 0 (advisory only) |
+```
+
+---
+
+## File 2: `.claude/skills/architecture-deep-dive/SKILL.md`
+
+```markdown
+---
+name: architecture-deep-dive
+description: Use for system architecture, module boundaries, multi-tenancy design,
+  BullMQ queue topology, Redis slot strategy, scalability thresholds, event-driven
+  workflows, service boundary decisions, and platform evolution.
+---
+
+# Architecture Deep Dive
+
+Use this skill when the task involves:
+- System or module architecture decisions
+- Multi-tenancy strategy (schema-per-tenant, RLS, connection routing)
+- BullMQ queue design — queue names, concurrency, retry, DLQ
+- Redis slot assignment or eviction strategy
+- Event-driven and outbox pattern decisions
+- Storage separation — PostgreSQL vs Redis vs object storage
+- Scalability thresholds and infrastructure evolution
+
+## Project Architecture Baseline
+
+[1–2 sentences describing the platform and its core domain]
+
+Core capabilities:
+[4–6 bullets — the primary things the system does]
+
+Core principle:
+See **CLAUDE.md → Principles** for cross-cutting constraints.
+
+## Core Architecture
+
+### Transaction System
+Use PostgreSQL as the source of truth for:
+[bullet list — users, orgs, tenants, core domain entities, audit trail, outbox table]
+
+### Multi-Tenancy Strategy
+[Describe the isolation model: schema-per-tenant, row-level security, or separate DB]
+[State the connection/session routing approach — how a request gets the right context]
+[ONE canonical statement here — never repeat in other skills]
+
+### Object Storage
+Use [MinIO / S3 / Azure Blob] for: [list asset types — documents, avatars, exports, etc.]
+
+### Cache / Queue
+[THIS IS THE CANONICAL LOCATION FOR ALL REDIS SLOT DEFINITIONS]
+Use Redis with [N] dedicated DB slots:
+- **db=0** — [purpose, e.g. BullMQ broker] ([TTL: none, eviction: noeviction])
+- **db=1** — [purpose, e.g. session cache] ([TTL: Xs, eviction: allkeys-lru, key: session:{id}])
+- **db=2** — [purpose] ([TTL, eviction policy, key pattern])
+Do not mix data across slots.
+
+[THIS IS THE CANONICAL LOCATION FOR ALL BULLMQ QUEUE DEFINITIONS]
+BullMQ queues (defined in `[backend_dir]/src/queues/index.ts`):
+- **[queue-name]** — worker: `[file]`, concurrency: [N], retries: [N], backoff: [strategy]
+- **[queue-name]** — worker: `[file]`, concurrency: [N], retries: [N], backoff: [strategy]
+Global worker config: `removeOnComplete: [N]`, `removeOnFail: [N]`, `defaultJobOptions: { ... }`
+
+### Event / Async Layer
+Use the **transactional outbox pattern** — full implementation spec in **backend-patterns skill**.
+Potential upgrade path: [e.g. migrate outbox polling to Kafka if volume exceeds X events/sec]
+
+Use async workers for: [list — email notifications, report generation, webhooks, data exports, etc.]
+
+## Architecture Principles
+
+### [Principle Name — e.g. Tenant Isolation First]
+[Rule + brief rationale — 1–2 sentences]
+
+### [Principle Name — e.g. Async by Default for Heavy Work]
+[Rule + brief rationale]
+
+### [Principle Name — e.g. Single Source of Truth per Concern]
+[Rule + brief rationale]
+
+[4–6 principles total]
+
+## Preferred Patterns
+
+### [Pattern name — e.g. Plugin-per-domain Route Registration]
+[Short description of the pattern and when it applies]
+
+### [Pattern name — e.g. Repository-owned Queries]
+[Short description]
+
+## Canonical Workflows
+
+### [Primary workflow — e.g. Async Job Submission]
+accept request → validate → persist state → write outbox row → return 202 → worker polls → enqueues BullMQ job → processes → updates state
+
+### [Workflow 2]
+[Step] → [Step] → [Step]
+
+[3–6 workflows total, one line each]
+
+## Scalability Thresholds
+
+- [Component]: current design handles ~[X] [unit]; beyond that, [evolution step]
+- [Component]: [threshold] → [evolution step]
+
+## When giving architecture advice
+
+Always:
+- Explain the tradeoff before recommending a direction
+- Propose the simplest viable solution first
+- Call out domain-specific constraints (multi-tenancy, compliance, audit)
+- Distinguish "now" decisions from "later if scale demands" decisions
+- Reference the canonical skill for implementation detail rather than repeating it
+
+## Output Style
+
+Prefer: module breakdown, component interaction list, sequence steps,
+deployment evolution plan, risks/tradeoffs/recommendations
+```
+
+---
+
+## File 3: `.claude/skills/backend-patterns/SKILL.md`
+
+```markdown
+---
+name: backend-patterns
+description: Use for Fastify backend design, service/repository layering, Prisma/Drizzle
+  usage, BullMQ worker authoring, transactional outbox pattern, integration adapters,
+  and all backend implementation work inside [backend_dir]/src/.
+---
+
+# Backend Patterns
+
+Use this skill when the task involves:
+- Fastify plugin design, route handler implementation, or middleware
+- Service or repository layer creation or modification
+- BullMQ worker authoring or queue configuration
+- Outbox pattern implementation
+- Redis caching integration
+- Auth middleware, RBAC, or audit logging
+- Cross-domain service orchestration
+
+## Backend Baseline
+
+Preferred stack:
+- Fastify [version] + `fastify-type-provider-zod`
+- [Prisma version] — ORM; `prisma/schema.prisma` is the schema source of truth
+- Zod [version] — request/response validation and TypeScript type inference
+- @fastify/jwt [version] — authentication
+- BullMQ [version] — background job queue; broker on Redis db=0
+- [ioredis / redis] [version] — Redis client
+
+## Backend Architecture Rule
+
+Use strict clean layering — Route → Service → Repository → DB.
+No layer may import from a layer above it. No Prisma calls in routes or services.
+
+1. **Route layer** — `[backend_dir]/src/routes/<domain>/index.ts`
+   HTTP concerns only: parse validated input, call service, return typed response.
+   Uses `fastify.withTypeProvider<ZodTypeProvider>()` — no business logic.
+
+2. **Service layer** — `[backend_dir]/src/services/<domain>.service.ts`
+   Business logic, state machine transitions, cross-domain orchestration, outbox
+   event creation. Receives `db: PrismaClient` (or transaction client) as first param.
+
+3. **Repository layer** — `[backend_dir]/src/repositories/<domain>.repository.ts`
+   All Prisma queries. Receives `db: PrismaClient | Prisma.TransactionClient`.
+   Returns typed domain objects or scalars. No business logic, no HTTP exceptions.
+
+4. **Schema (data) layer** — `prisma/schema.prisma`
+   Source of truth for all data models. See **database-patterns skill** for rules.
+
+## Route (Plugin) Rules
+
+- Every route file exports `async function plugin(fastify: FastifyInstance)` and is
+  registered via `fastify.register()` in `[backend_dir]/src/routes/index.ts`
+- Every route declares a `schema` object: `{ body?, querystring?, params?, response: { 2xx: ... } }`
+- Auth: `preHandler: [fastify.authenticate]` — never inline JWT verification
+- Role checks: `preHandler: [fastify.authenticate, requireRoles(['admin'])]`
+- Status codes are always explicit — never rely on Fastify defaults for 201 or 204
+- Never import `PrismaClient` directly in a route — receive `db` from the Fastify instance
+  via a plugin decoration: `fastify.decorate('db', prisma)`
+
+## Service Layer Rules
+
+- One file per domain: `<domain>.service.ts`
+- All exported functions receive `db: PrismaClient` as their first parameter
+- Services own business logic, input validation beyond Zod, state transitions, and
+  outbox event writes
+- Services must NOT call Prisma directly — delegate all DB access to the domain repository
+- For cross-domain atomicity, wrap in `db.$transaction(async (tx) => { ... })` and pass
+  `tx` to all repositories involved
+- A service may pass the same `db` or `tx` to repositories from multiple domains
+- Services do not throw `HttpException` — throw domain `Error` subclasses; the route
+  handler maps these to HTTP status codes
+
+## Repository Layer Rules
+
+- One file per domain: `<domain>.repository.ts`
+- All functions are `async`, accept `db: PrismaClient | Prisma.TransactionClient` as
+  first param, return typed objects or `null` — never `undefined`
+- No business logic — only query construction, execution, and result mapping
+- No HTTP concepts (`HttpException`, status codes) — throw `Error` or return `null`
+- Repositories are stateless — module-level exported functions, not class instances
+- Use Prisma typed selects to guarantee return shape safety
+
+Canonical TypeScript function signatures (adapt names to domain):
+```typescript
+export async function getById(db: PrismaClient, id: string): Promise<Domain | null>
+export async function listWithFilters(db: PrismaClient, filters: DomainFilters): Promise<Domain[]>
+export async function create(db: PrismaClient, data: CreateDomainInput): Promise<Domain>
+export async function update(db: PrismaClient, id: string, changes: UpdateDomainInput): Promise<Domain>
+export async function remove(db: PrismaClient, id: string): Promise<void>
+```
+
+## BullMQ Worker Rules
+
+Use BullMQ for: [list — email delivery, PDF generation, OCR, webhooks, data exports, etc.]
+Never block the Fastify request cycle with heavy work.
+
+Typical request-to-worker flow:
+1. Route handler receives and validates the request
+2. Service persists initial state to PostgreSQL
+3. Service writes an outbox row in the **same** DB transaction (see outbox spec below)
+4. Route returns `202 Accepted` with a job-tracking reference
+5. Outbox poller picks up the event → enqueues a BullMQ job
+6. Worker processes, updates state, emits completion or failure event
+
+Worker file location: `[backend_dir]/src/workers/<domain>.worker.ts`
+Queue registration: `[backend_dir]/src/queues/index.ts`
+See **architecture-deep-dive skill → BullMQ Queue Definitions** for canonical queue names,
+concurrency, and retry configuration.
+
+## Redis Rules
+
+Use Redis for: [session/token cache, rate-limit counters, pub/sub fan-out, BullMQ broker]
+Do NOT use Redis as a source of truth for domain data — PostgreSQL owns that.
+Every Redis key must belong to exactly one DB slot — no cross-slot reads or writes.
+
+### Redis DB Slot Strategy
+See **architecture-deep-dive skill → Cache / Queue** for canonical DB slot assignments,
+TTL rules, and eviction policies.
+
+## Transactional Outbox Pattern
+
+[THIS IS THE CANONICAL LOCATION FOR THE FULL OUTBOX SPEC]
+All domain events ([list: e.g. UserCreated, AssignmentCompleted, NotificationRequested]) must:
+
+1. Write an `[outbox_table]` row within the **same** `db.$transaction()` block as the
+   state change — never outside it
+2. Never enqueue a BullMQ job directly from a route handler or service without the outbox
+
+Outbox row shape:
+```typescript
+{ id, event_type, payload: JSON, status: 'PENDING', created_at, published_at? }
+```
+
+Outbox polling worker (`[backend_dir]/src/workers/outbox.worker.ts`, interval: [N]s):
+- Reads rows WHERE status = 'PENDING' ORDER BY created_at LIMIT [N]
+- Enqueues the corresponding BullMQ job
+- Sets status → 'PUBLISHED' on success
+- Sets status → 'FAILED' on error; retries up to [N] times
+- Sets status → 'DEAD_LETTER' after max retries
+
+This guarantees no lost jobs on API crash or Redis restart.
+
+## Polymorphic Data Patterns (if applicable)
+
+[Any polymorphic tables — reactions, comments, attachments — describe entity_type convention]
+
+## Security Rules
+
+- All route handlers on protected resources declare `preHandler: [fastify.authenticate]`
+- Role-based access uses `requireRoles([...])` from `[backend_dir]/src/plugins/auth.ts`
+- [Tenant-scoped queries: describe how tenant context is applied to every query]
+- Audit log: [describe what is written, where, and when — service or DB trigger]
+- Never log PII or secrets — use structured logging with field allowlists
+
+## Performance Rules
+
+- All repository functions are `async` — never block the event loop with sync DB calls
+- Use Prisma `include` and `select` to prevent N+1 queries — never fetch relations lazily
+- Use cursor-based pagination for large result sets; never `offset` + `limit` beyond [N] rows
+- Cache expensive read-only computations in Redis (TTL: [X]s); invalidate on mutation
+- Use `db.$transaction()` only when atomicity is required — avoid long-held transactions
+
+## Error Handling Rules
+
+- Set a global Fastify `setErrorHandler` in `[backend_dir]/src/plugins/error-handler.ts`
+- All errors resolve to: `{ error: string; code: string; details?: unknown }`
+- Domain `Error` subclasses (e.g. `NotFoundError`, `ForbiddenError`) map to HTTP codes
+  in the error handler — routes never construct `reply.status(N).send(...)` for errors
+- BullMQ jobs that exhaust retries move to DEAD_LETTER; alert via [observability tool]
+```
+
+---
+
+## File 4: `.claude/skills/database-patterns/SKILL.md`
+
+```markdown
+---
+name: database-patterns
+description: Use for Prisma schema authoring, migration generation and review,
+  PostgreSQL transaction patterns, multi-tenant DB strategy, query optimization,
+  seed scripts, soft deletes, and Prisma client usage.
+---
+
+# Database Patterns
+
+Use this skill when the task involves:
+- Adding or modifying a Prisma schema model
+- Generating or reviewing a database migration
+- Designing relations, enums, or indexes in `schema.prisma`
+- Transaction strategy (when to use `$transaction` vs implicit)
+- Multi-tenant connection routing or schema switching
+- Query optimization (N+1, cursor pagination, raw queries)
+- Seed scripts or test fixtures that hit the database
+
+## ORM Baseline
+
+- [Prisma version] — schema file: `prisma/schema.prisma`
+- Prisma client output: `[client output path, e.g. node_modules/.prisma/client]`
+- Database URL: stored in `[.env variable name]`; never hardcoded
+
+## Prisma Schema Rules
+
+- All models use UUID primary keys: `id  String  @id  @default(uuid())`
+- Every model has `createdAt DateTime @default(now())` and `updatedAt DateTime @updatedAt`
+- Soft deletes: `deletedAt DateTime?` — never hard-delete user-facing records
+- Relations define both sides explicitly — no implicit back-relations
+- Enums live in `schema.prisma` only — never use magic string literals in application code
+- Run `npx prisma validate` before generating every migration
+- All index annotations (`@@index`, `@@unique`) must be explicitly declared
+
+## Migration Rules
+
+- Never edit a `.sql` migration file after it has been applied to any environment
+- Migration name describes the change precisely: `add_assignment_status_enum`, not `update3`
+- Always review the generated SQL before applying — Prisma may silently generate DROP + ADD
+  for a column rename, which destroys data
+- Column renames: use `prisma migrate diff` to generate a shell, then write explicit
+  `RENAME COLUMN` SQL instead of accepting the destructive default
+- Test `prisma migrate reset` locally after every major schema change
+- Production deployments use `prisma migrate deploy` — never `prisma migrate dev` in CI/prod
+- Rollback: Prisma has no built-in `down` migration; document the manual reversal SQL
+  in a comment at the top of every migration file
+
+## Multi-Tenancy at the DB Layer
+
+[ONE canonical statement here about how tenant isolation is implemented:
+ schema-per-tenant switching, row-level security policies, or separate connection pools]
+[How does the application set the tenant context per request?]
+[Never repeat this in any other skill — link back: "See database-patterns skill → Multi-Tenancy"]
+
+## Transaction Patterns
+
+Use `db.$transaction(async (tx) => { ... })` when multiple writes must be atomic:
+
+```typescript
+// Canonical: state change + outbox row in one transaction
+await db.$transaction(async (tx) => {
+  const record = await domainRepo.create(tx, data)
+  await outboxRepo.create(tx, {
+    event_type: 'DOMAIN_CREATED',
+    payload: { id: record.id },
+    status: 'PENDING',
+  })
+})
+```
+
+Use Prisma's implicit per-query transaction (default) for single-model reads and writes.
+Avoid long-held transactions — keep `$transaction` blocks as short as possible.
+Timeout: set `timeout` option on interactive transactions if the operation may be slow.
+
+## Query Optimization Rules
+
+- Prevent N+1: always use `include` or `select` on relations needed in the response
+- Large lists: use cursor-based pagination (`cursor: { id: lastId }, take: N, skip: 1`)
+  — never `offset` + `limit` beyond [N] rows (causes full table scans at scale)
+- Raw queries: use `db.$queryRaw<Type[]>` with Prisma.sql template literals; never
+  string-concatenate SQL (SQL injection risk)
+- Read-heavy endpoints: consider a Redis cache layer — see **backend-patterns skill**
+- Explain plans: run `EXPLAIN ANALYZE` on any query touching > [N] rows before shipping
+```
+
+---
+
+## File 5: `.claude/skills/api-contract-guidelines/SKILL.md`
+
+```markdown
+---
+name: api-contract-guidelines
+description: Use for Zod schema design, Fastify type-provider wiring, request/response
+  typing, OpenAPI spec generation, error response shape, and API versioning conventions.
+---
+
+# API Contract Guidelines
+
+Use this skill when the task involves:
+- Defining or changing a Zod request or response schema
+- Wiring `fastify-type-provider-zod` to a route
+- Adding or updating OpenAPI/Swagger documentation
+- Designing error response shapes
+- API versioning (URL prefix, header, or content negotiation)
+- Shared schema types used across multiple domains
+
+## Zod + Fastify Type Provider
+
+Every route plugin must use `withTypeProvider<ZodTypeProvider>()` and declare a
+`schema` object. This provides end-to-end TypeScript types at zero runtime cost.
+
+```typescript
+import { FastifyInstance } from 'fastify'
+import { ZodTypeProvider } from 'fastify-type-provider-zod'
+import { z } from 'zod'
+import { CreateDomainSchema, DomainResponseSchema } from '../../schemas/domain.schema'
+import * as domainService from '../../services/domain.service'
+
+export async function domainRoutes(fastify: FastifyInstance) {
+  const f = fastify.withTypeProvider<ZodTypeProvider>()
+
+  f.post('/domains', {
+    preHandler: [fastify.authenticate],
+    schema: {
+      body: CreateDomainSchema,
+      response: { 201: DomainResponseSchema },
+    },
+  }, async (request, reply) => {
+    const result = await domainService.create(fastify.db, request.body)
+    return reply.status(201).send(result)
+  })
+}
+```
+
+## Zod Schema Rules
+
+- Schema files live in `[backend_dir]/src/schemas/<domain>.schema.ts`
+- Always export the Zod schema AND the inferred TypeScript type:
+  ```typescript
+  export const DomainSchema = z.object({ ... })
+  export type Domain = z.infer<typeof DomainSchema>
+  ```
+- Request schemas (body, querystring, params): use `.strict()` to reject unknown fields
+- Response schemas: use `.strip()` — never leak internal fields (password hash, internal flags)
+- Every route declares error responses:
+  ```typescript
+  response: { 201: DomainResponseSchema, 400: ErrorSchema, 401: ErrorSchema, 404: ErrorSchema }
+  ```
+- Shared field patterns (UUID, ISO datetime, pagination cursor, sort order) go in
+  `[backend_dir]/src/schemas/shared.schema.ts` — import from there; never duplicate
+
+## OpenAPI Rules
+
+[If `@fastify/swagger` is used:]
+- Tag every route plugin with a domain tag: `schema: { tags: ['[domain]'], ... }`
+- Server info, contact, and license defined once in `[backend_dir]/src/plugins/swagger.ts`
+- Auth scheme (Bearer JWT) declared once in the swagger plugin — never per-route
+- Generate and commit `openapi.json` as part of the build: `npm run build:openapi`
+
+## API Versioning Rules
+
+- URL prefix strategy: all routes under `/api/v[N]/...`
+- Breaking changes (field removal, type change) require a new version prefix
+- Non-breaking additions (new optional fields) may be shipped in the current version
+- Deprecation notice: add `x-deprecated: true` to the route's OpenAPI `schema` before removal
+
+## Error Response Shape
+
+All error responses across the API conform to:
+```typescript
+{ error: string; code: string; details?: unknown }
+```
+The global Fastify error handler in `[backend_dir]/src/plugins/error-handler.ts` normalizes
+ALL errors to this shape. Routes never construct error reply bodies directly.
+
+Standard error codes:
+- `VALIDATION_ERROR` — Zod parse failure (400)
+- `UNAUTHORIZED` — missing or invalid JWT (401)
+- `FORBIDDEN` — insufficient role (403)
+- `NOT_FOUND` — resource does not exist (404)
+- `CONFLICT` — duplicate or constraint violation (409)
+- `INTERNAL_ERROR` — unhandled exception (500)
+```
+
+---
+
+## File 6: `.claude/skills/frontend-guidelines/SKILL.md`
+
+```markdown
+---
+name: frontend-guidelines
+description: Use for all work inside [frontend_dir]/, including React, TypeScript,
+  TanStack Query, Zustand, Tailwind CSS, React Router, Axios API calls, forms,
+  MSW mocks, and UI task execution.
+---
+
+# Frontend Guidelines
+
+Use this skill when the task involves:
+- Creating or modifying React pages, components, or layouts
+- TanStack Query hooks for data fetching, mutation, or cache invalidation
+- Zustand store definitions or usage
+- Tailwind CSS styling and responsive design
+- React Router route configuration
+- Form handling and client-side validation
+- MSW mock handler authoring for demo mode
+- TypeScript typing for API responses and component props
+
+## Scope Rules
+- All frontend work must stay inside `[frontend_dir]/`
+- Do not create files outside `[frontend_dir]/` unless adding root-level config docs
+- Use the existing module structure — do not invent new top-level directories
+
+## Frontend Stack
+[List exact packages with versions:]
+- React [version] + TypeScript [version]
+- Vite [version] — build tool
+- TanStack Query [version] — server state and data fetching
+- Zustand [version] — global client state (auth, role, lightweight UI flags)
+- Tailwind CSS [version] — styling
+- React Router [version] — routing
+- [form library, e.g. React Hook Form] + [validation, e.g. Zod] — forms
+- Axios [version] — HTTP client (via typed API client in `lib/api/`)
+- MSW [version] — mock service worker for demo mode
+
+## Import Rules
+- Use the `@/` path alias for all intra-project imports (e.g. `@/components/Button`)
+- Avoid deep relative imports that cross module boundaries (e.g. `../../../../lib`)
+- Type-only imports use `import type { Foo }` — never mix type and value imports
+
+## UI Design Rules
+- Prefer [UI component library, if any] for interactive elements (buttons, inputs, dialogs,
+  tables, modals, toasts)
+- Use Tailwind CSS for layout, spacing, and colour — keep component styles co-located
+- [Any domain-specific display rules — e.g. status badge colours, icon conventions]
+
+## Component Rules
+- PascalCase file names matching the component name: `ConsultantCard.tsx`
+- One component per file unless a tiny local helper is justified (max ~30 lines)
+- Keep components presentation-focused — no business logic, no direct API calls
+- Accept data via typed props; do not reach into global state from presentational components
+
+## Data Fetching Rules
+- All server state goes through TanStack Query — no raw `useEffect + fetch` patterns
+- Typed API client functions live in `[frontend_dir]/src/lib/api/<domain>.ts`
+- Query keys are constants defined in `[frontend_dir]/src/lib/queryKeys.ts`
+- Align request/response types with the backend Zod schemas (share or mirror them)
+- Mutations call `queryClient.invalidateQueries` or `setQueryData` for optimistic updates
+
+## Forms Rules
+- Use [React Hook Form] with Zod `zodResolver` for schema-driven validation
+- Keep validation schemas explicit and co-located with the form component
+- Surface field-level validation errors in the UI immediately on blur
+- Disable the submit button while a mutation is pending
+
+## State Rules
+- Use Zustand only for: auth session, current user role, and lightweight UI flags
+- Do not put server-fetched data into Zustand — TanStack Query is the right tool
+- Zustand stores live in `[frontend_dir]/src/store/<concern>.store.ts`
+
+## Mock / Demo Mode Rules
+When `[DEMO_ENV_VAR]=true`:
+- MSW handlers intercept API calls in the browser — no real backend needed
+- Handlers live in `[frontend_dir]/src/mocks/handlers/<domain>.ts`
+- Handler request/response shapes must match the actual Zod API contract exactly
+- Include realistic latency ([200–600]ms) via `await delay([N])`
+- Use realistic fixture data — no `foo`, `bar`, `test123`
+
+## Source of Truth
+- `[Docs/tasks.md path]` — implementation task checklist
+- `[Docs/implementation-plan.md path]` — API contract and feature spec
+
+## Directory Guidance
+
+| Concern | Location |
+|---|---|
+| Pages / route components | `[frontend_dir]/src/pages/` |
+| Reusable UI components | `[frontend_dir]/src/components/` |
+| Domain-specific components | `[frontend_dir]/src/features/<domain>/` |
+| TanStack Query hooks | `[frontend_dir]/src/hooks/` |
+| Typed API client functions | `[frontend_dir]/src/lib/api/` |
+| Zustand stores | `[frontend_dir]/src/store/` |
+| Shared TypeScript types | `[frontend_dir]/src/types/` |
+| MSW mock handlers | `[frontend_dir]/src/mocks/handlers/` |
+| Route config | `[frontend_dir]/src/router.tsx` or `app/routes.tsx` |
+
+### Key shared components (place in `components/shared/`)
+[List 3–5 truly shared components with file names and which API route they call]
+
+### Key pages / routes
+[List 5–10 important routes: path → component name → file path]
+
+### Key feature components
+[List 3–5 domain-specific components with target directories]
+
+## When generating frontend output
+Prefer: exact file paths, minimal production-usable code, typed props,
+reusable patterns aligned to the current directory structure,
+brief explanation of where the file goes and why
+
+## Avoid
+- Raw `useEffect + fetch` for server data
+- Inline styles or arbitrary Tailwind values not in the config
+- Importing backend Prisma types directly into frontend code
+- Any `any` type — always use the proper inferred or declared type
+- Components longer than ~200 lines — extract sub-components instead
+- Putting API base URLs anywhere except `[frontend_dir]/src/lib/api/client.ts`
+```
+
+---
+
+## File 7: `.claude/skills/testing-quality-gates/SKILL.md`
+
+```markdown
+---
+name: testing-quality-gates
+description: Use for Vitest unit and integration test authoring, Supertest HTTP tests,
+  test isolation strategy, fixture and factory patterns, mock discipline, coverage
+  gates, and frontend component testing with React Testing Library.
+---
+
+# Testing Quality Gates
+
+Use this skill when the task involves:
+- Writing or fixing a Vitest unit test for a service, repository, or utility
+- Writing Supertest integration tests for Fastify route plugins
+- Designing test isolation (when to use real DB vs in-memory vs mock)
+- Building test fixtures, factories, or seed helpers
+- Setting up or interpreting coverage thresholds
+- Writing React Testing Library tests for frontend components
+- Debugging a test that passes locally but fails in Docker
+
+## Test Stack Baseline
+
+Backend:
+- Vitest [version] — unit and integration tests; runs inside Docker
+- Supertest [version] — HTTP-level Fastify route testing
+- [Prisma test helpers / pg-mem / test containers] — DB isolation strategy
+
+Frontend:
+- Vitest [version] — component and hook tests; runs on host
+- React Testing Library [version] — component rendering and interaction
+- MSW [version] — API mocking in component tests
+
+## Test Directory Layout
+
+```
+[backend_dir]/src/__tests__/
+  unit/            ← pure logic: services, repositories (mocked DB), utilities
+  integration/     ← real DB + Redis; runs full Fastify app via Supertest
+  fixtures/        ← factory functions and seed helpers shared across tests
+  setup.ts         ← global beforeAll / afterAll (DB reset, app bootstrap)
+
+[frontend_dir]/src/__tests__/
+  components/      ← React Testing Library tests
+  hooks/           ← TanStack Query hook tests with MSW
+```
+
+## Backend Unit Test Rules
+
+- One test file per module: `<domain>.service.test.ts` next to the service
+- Mock the repository layer with `vi.mock('../repositories/<domain>.repository')`
+- Never mock the service in a service test — test the real function
+- Test each public function: happy path + at least one error/edge case
+- Use `vi.fn()` typed returns to keep mocks type-safe
+
+```typescript
+import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { create<Resource> } from '../services/<domain>.service'
+import * as repo from '../repositories/<domain>.repository'
+
+vi.mock('../repositories/<domain>.repository')
+
+describe('create<Resource>', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('creates and returns the new record', async () => {
+    const mockDb = {} as PrismaClient
+    vi.mocked(repo.create<Resource>).mockResolvedValue(mockRecord)
+    const result = await create<Resource>(mockDb, validInput)
+    expect(result).toEqual(expectedResponse)
+  })
+})
+```
+
+## Backend Integration Test Rules
+
+- One test file per domain route: `<domain>.routes.test.ts`
+- Bootstrap the full Fastify app once per suite (`beforeAll`) — not per test
+- Use a real PostgreSQL test database; reset state between suites with a transaction rollback or `TRUNCATE`
+- Never mock the repository or service in integration tests — test the full stack
+- Assert HTTP status, response body shape, and any DB side-effects
+
+```typescript
+import { build } from '../app'  // Fastify app factory
+import supertest from 'supertest'
+
+describe('POST /<resources>', () => {
+  let app: FastifyInstance
+
+  beforeAll(async () => { app = await build(); await app.ready() })
+  afterAll(() => app.close())
+
+  it('returns 201 with the created resource', async () => {
+    const res = await supertest(app.server)
+      .post('/api/v1/<resources>')
+      .set('Authorization', `Bearer ${testToken}`)
+      .send(validPayload)
+    expect(res.status).toBe(201)
+    expect(res.body).toMatchObject({ id: expect.any(String) })
+  })
+})
+```
+
+## Fixture and Factory Rules
+
+- Factory functions live in `[backend_dir]/src/__tests__/fixtures/<domain>.factory.ts`
+- Factories return minimal valid objects; tests override only the fields they care about
+- Never hardcode UUIDs or timestamps in fixtures — use `crypto.randomUUID()` and `new Date()`
+- Seed helpers (`seedUser`, `seedTenant`) wrap factory + DB insert for integration tests
+
+## Frontend Component Test Rules
+
+- Test user-visible behaviour, not implementation details
+- Use `render` + `screen` + `userEvent` from React Testing Library
+- Mock API calls with MSW handlers in `src/__tests__/setup.ts` — never mock `axios` directly
+- Assert on `screen.getByRole`, `getByText`, `getByLabelText` — avoid `getByTestId` except as last resort
+
+## Coverage Gates
+
+Minimum thresholds (adjust per project):
+- `lines: [X]%`, `functions: [X]%`, `branches: [X]%`
+- Configure in `vitest.config.ts` under `coverage.thresholds`
+- CI fails the build if thresholds are not met
+
+## What NOT to Test
+
+- Prisma model field definitions — tested implicitly by migrations
+- Zod schema structure — test the routes that use them instead
+- Third-party library internals (BullMQ, Fastify) — trust the library
+- Private helper functions with no observable side-effects
+```
+
+---
+
+## File 8: `.claude/hooks/prefer_lsp.py`
+
+This project is 100% TypeScript (frontend + backend). Adapt only the `lsp_exts` list.
+Do NOT include `.py` — there is no Python application code in this stack.
+
+```python
+#!/usr/bin/env python3
+import json
+import sys
+
+data = json.load(sys.stdin)
+tool_input = data.get("tool_input", {}) or {}
+
+candidates = []
+for key in ("path", "paths", "glob", "pattern", "query", "include"):
+    value = tool_input.get(key)
+    if isinstance(value, str):
+        candidates.append(value)
+    elif isinstance(value, list):
+        candidates.extend(str(v) for v in value)
+
+text = " ".join(candidates).lower()
+
+# Both frontend and backend are TypeScript — LSP covers the entire project
+lsp_exts = (".ts", ".tsx")
+
+if any(ext in text for ext in lsp_exts):
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": (
+                "For TypeScript code navigation, use the LSP tool instead of Grep. "
+                "Prefer: definitions, references, symbols, hover/type info, diagnostics. "
+                "Use Grep only as a fallback when LSP cannot answer the question."
+            )
+        }
+    }))
+
+sys.exit(0)
+```
+
+---
+
+## File 9: `.claude/hooks/ts-diagnostics.py`
+
+Python script (not .sh) — required for Windows compatibility.
+Runs `tsc --noEmit` for BOTH frontend and backend after any `.ts`/`.tsx` edit.
+Exits 2 on errors to force Claude to fix them before continuing.
+
+```python
+#!/usr/bin/env python3
+"""
+PostToolUse hook: runs tsc --noEmit after any Edit/Write on a .ts or .tsx file.
+Covers both frontend and backend since both are TypeScript.
+Exits 2 on type errors so Claude is forced to address them immediately.
+"""
+import json
+import os
+import subprocess
+import sys
+
+data = json.load(sys.stdin)
+file_path = (data.get("tool_input") or {}).get("file_path", "")
+
+if not file_path.endswith((".ts", ".tsx")):
+    sys.exit(0)
+
+# Relative paths from the project root — filled in from project discovery
+FRONTEND_DIR = "./[frontend_dir]"
+BACKEND_DIR = "./[backend_dir]"
+
+
+def is_under(child: str, parent: str) -> bool:
+    """True only when child is strictly inside parent (avoids substring false-matches)."""
+    c = os.path.normpath(os.path.abspath(child))
+    p = os.path.normpath(os.path.abspath(parent))
+    return c.startswith(p + os.sep) or c == p
+
+
+if is_under(file_path, FRONTEND_DIR):
+    check_dir = FRONTEND_DIR
+elif is_under(file_path, BACKEND_DIR):
+    check_dir = BACKEND_DIR
+else:
+    sys.exit(0)
+
+if not os.path.isdir(check_dir):
+    sys.exit(0)
+
+result = subprocess.run(
+    ["npx", "tsc", "--noEmit", "--pretty", "false"],
+    cwd=check_dir,
+    capture_output=True,
+    text=True,
+)
+
+if result.returncode == 0:
+    sys.exit(0)
+
+print(f"TypeScript errors detected after editing: {file_path}")
+print()
+output = (result.stdout + result.stderr).splitlines()
+print("\n".join(output[:50]))
+sys.exit(2)
+```
+
+---
+
+## File 10: `.claude/hooks/eslint-check.py`
+
+Advisory lint hook — exits 0 always (surfaces warnings without blocking Claude).
+Replaces `ruff-check.py` from the Python stack. Covers backend `.ts` files only
+(frontend TypeScript is covered by the ts-diagnostics hook above).
+
+**ESLint v8 vs v9:** The `--ext` flag was removed in ESLint v9 (flat config).
+Set `ESLINT_V9` below based on the version found in discovery step 4.
+
+```python
+#!/usr/bin/env python3
+"""
+PostToolUse hook: runs ESLint after any Edit/Write on a backend .ts file.
+Advisory only (exits 0) — surfaces lint warnings without blocking Claude.
+
+ESLint v8 (.eslintrc.*):     uses --ext .ts flag
+ESLint v9 (eslint.config.js): --ext flag removed; file path is sufficient
+Set ESLINT_V9 = True when package.json shows eslint >= 9.x.
+"""
+import json
+import os
+import subprocess
+import sys
+
+data = json.load(sys.stdin)
+file_path = (data.get("tool_input") or {}).get("file_path", "")
+
+# Absolute path to the backend src directory — filled in from project discovery
+BACKEND_ABS = "[ABSOLUTE_BACKEND_PATH]"
+
+# Set to True if ESLint version >= 9 (flat config); False for ESLint 8 (.eslintrc)
+ESLINT_V9 = False  # <-- update from discovery step 4
+
+if not file_path.endswith(".ts"):
+    sys.exit(0)
+
+if not os.path.normpath(file_path).startswith(os.path.normpath(BACKEND_ABS) + os.sep):
+    sys.exit(0)
+
+cmd = ["npx", "eslint", file_path, "-q"]
+if not ESLINT_V9:
+    cmd = ["npx", "eslint", file_path, "--ext", ".ts", "-q"]
+
+result = subprocess.run(
+    cmd,
+    cwd=BACKEND_ABS,
+    capture_output=True,
+    text=True,
+)
+
+if result.returncode != 0:
+    output = (result.stdout + result.stderr).splitlines()
+    print("\n".join(output[:15]))
+
+sys.exit(0)
+```
+
+---
+
+## File 11 (optional): `.claude/hooks/prisma-validate.py`
+
+Add this hook only if the project uses Prisma. Exits 2 on schema errors.
+
+```python
+#!/usr/bin/env python3
+"""
+PostToolUse hook: runs prisma validate after any Edit/Write on schema.prisma.
+Exits 2 on validation errors so Claude must fix them before migrating.
+"""
+import json
+import os
+import subprocess
+import sys
+
+data = json.load(sys.stdin)
+file_path = (data.get("tool_input") or {}).get("file_path", "")
+
+if not file_path.endswith("schema.prisma"):
+    sys.exit(0)
+
+BACKEND_DIR = "[ABSOLUTE_BACKEND_PATH]"
+
+result = subprocess.run(
+    ["npx", "prisma", "validate"],
+    cwd=BACKEND_DIR,
+    capture_output=True,
+    text=True,
+)
+
+if result.returncode == 0:
+    sys.exit(0)
+
+print("Prisma schema validation failed:")
+print(result.stdout + result.stderr)
+sys.exit(2)
+```
+
+---
+
+## File 12: `.claude/commands/` — ten slash commands
+
+For every command, replace ALL placeholders below with project-specific values.
+Run `ls` on each referenced directory to verify the path exists before writing.
+
+| Placeholder | Replace with |
+|---|---|
+| `[project_name]` | actual project name |
+| `[backend_dir]` | actual backend path (e.g. `backend/`) |
+| `[frontend_dir]` | actual frontend path (e.g. `frontend/`) |
+| `[models_path]` | `prisma/schema.prisma` or `[backend_dir]/src/db/schema/` for Drizzle |
+| `[schemas_path]` | `[backend_dir]/src/schemas/<domain>.schema.ts` |
+| `[services_path]` | `[backend_dir]/src/services/<domain>.service.ts` |
+| `[repositories_path]` | `[backend_dir]/src/repositories/<domain>.repository.ts` |
+| `[endpoints_path]` | `[backend_dir]/src/routes/<domain>/index.ts` |
+| `[workers_path]` | `[backend_dir]/src/workers/<domain>.worker.ts` |
+| `[routes_index]` | `[backend_dir]/src/routes/index.ts` |
+| `[workers_index]` | `[backend_dir]/src/workers/index.ts` |
+| `[queues_index]` | `[backend_dir]/src/queues/index.ts` |
+| `[migration_tool]` | `prisma` (or `drizzle-kit` if using Drizzle) |
+| `[migration_dir]` | `prisma/migrations/` |
+| `[linter_cmd]` | `cd [backend_dir] && npx eslint src/ --ext .ts -q` |
+| `[linter_autofix_cmd]` | `cd [backend_dir] && npx eslint src/ --ext .ts --fix -q` |
+| `[type_checker_cmd]` | `cd [backend_dir] && npx tsc --noEmit` |
+| `[test_cmd]` | `docker compose exec api npx vitest run` |
+| `[test_dir]` | `[backend_dir]/src/__tests__/` |
+| `[tasks_file]` | `Docs/tasks.md` |
+| `[checklist_file]` | `Docs/tasks.md` |
+| `[frontend_build_cmd]` | `cd [frontend_dir] && npm run build` |
+
+---
+
+### `fix-error.md`
+
+```markdown
+# /fix-error
+
+Efficiently diagnose and fix a specific error without reading unrelated code.
+
+## Argument
+Paste the error or stack trace after the command: `/fix-error <error>`
+
+## Instructions
+
+### Step 1 — Parse the error
+Extract: exact file and line number, error type and message, any chained cause.
+
+### Step 2 — Read only what's needed
+- Use `Read` with `offset` and `limit` to read ±20 lines around the failing line.
+- Use `LSP hover` on the failing symbol to check its type or signature.
+- Use `LSP goto_definition` if the error is about a missing or mistyped property.
+
+### Step 3 — Fix
+Apply the minimal change. Do not refactor surrounding code.
+
+### Step 4 — Verify
+```bash
+docker compose exec api npx vitest run [test_dir]/<relevant_file>.test.ts
+```
+
+### Step 5 — Report
+One sentence: what was wrong and what was changed. Include file:line reference.
+
+## Token rules
+- Never read a file in full to find a bug — always use line-targeted `Read`.
+- Never re-read a file you just edited.
+- If the error is in a node_modules dependency, find the last frame that IS your code.
+```
+
+---
+
+### `impl-phase.md`
+
+```markdown
+# /impl-phase
+
+Implement the next incomplete phase of [project_name], following the plan exactly.
+
+## Argument
+Pass the phase number: `/impl-phase 3`
+If no argument given, detect the next incomplete phase from `[tasks_file]`.
+
+## Instructions
+
+### Step 1 — Scope
+Read only the relevant phase section from `[tasks_file]`.
+Do NOT re-read the full implementation plan — all architecture context is in `CLAUDE.md`.
+
+### Step 2 — Navigate with LSP, not file search
+- Use `LSP goto_definition` to find imported types, interfaces, and base plugins.
+- Use `LSP find_references` before modifying shared utilities or exported types.
+- Use `LSP hover` to check types and function signatures.
+- Only use `Read` with `offset`+`limit` for a known file section.
+
+### Step 3 — Implementation order (always follow this sequence)
+1. Prisma schema model → `[models_path]` (run `npx prisma validate` after every change)
+2. Migration: generate (`prisma migrate dev --name <name> --create-only`) → review SQL → apply
+3. Zod schemas → `[schemas_path]`
+4. Repository → `[repositories_path]` (all Prisma queries here; none in service or route)
+5. Service layer → `[services_path]` (calls repository; owns business logic; uses `$transaction` where needed)
+6. Fastify route plugin → `[endpoints_path]` (HTTP concerns only; calls service)
+7. Register route plugin in `[routes_index]` if this is a new domain
+8. BullMQ worker → `[workers_path]` (register in `[backend_dir]/src/workers/index.ts` if new queue)
+
+### Step 4 — Quality gates (run after each file)
+```bash
+[linter_cmd]
+[type_checker_cmd]
+```
+
+### Step 5 — Test
+```bash
+[test_cmd]
+```
+
+### Step 6 — Update checklist
+Mark completed items `[x]` in `[tasks_file]`.
+Update the phase status line and `## Overall Progress` table.
+
+## Token-saving rules
+- Do not re-read files you just wrote.
+- Do not read the full implementation plan — all context is in `CLAUDE.md`.
+- Batch related edits in one `Edit` call where possible.
+- Stop and confirm before any destructive migration operation (DROP COLUMN, DROP TABLE).
+```
+
+---
+
+### `new-endpoint.md`
+
+```markdown
+# /new-endpoint
+
+Scaffold a new Fastify API endpoint following the [project_name] layer pattern.
+
+## Argument
+`/new-endpoint <domain> <HTTP-verb> <resource>`
+
+## Endpoint Pattern (do not deviate)
+
+### 1. Zod Schema — `[schemas_path]`
+```typescript
+import { z } from 'zod'
+import { uuidSchema, isoDateSchema } from '../schemas/shared.schema'
+
+export const Create<Resource>Schema = z.object({
+  // fields — use .strict() to reject unknown keys
+}).strict()
+
+export const <Resource>ResponseSchema = z.object({
+  id: uuidSchema,
+  createdAt: isoDateSchema,
+  // fields — use .strip() to omit internal fields
+})
+
+export type Create<Resource>Input = z.infer<typeof Create<Resource>Schema>
+export type <Resource>Response = z.infer<typeof <Resource>ResponseSchema>
+```
+
+### 2. Repository query — `[repositories_path]`
+```typescript
+import type { PrismaClient, Prisma, <PrismaModel> } from '@prisma/client'
+import type { Create<Resource>Input } from '../schemas/<domain>.schema'
+
+// Repositories return the Prisma model type — NOT the response DTO.
+// The service (or a dedicated mapper) converts to the response shape.
+export async function get<Resource>(
+  db: PrismaClient | Prisma.TransactionClient,
+  id: string,
+): Promise<<PrismaModel> | null> { ... }
+
+export async function create<Resource>(
+  db: PrismaClient | Prisma.TransactionClient,
+  data: Create<Resource>Input,
+): Promise<<PrismaModel>> { ... }
+```
+
+### 3. Service method — `[services_path]`
+```typescript
+import type { PrismaClient } from '@prisma/client'
+import type { Create<Resource>Input, <Resource>Response } from '../schemas/<domain>.schema'
+import { get<Resource>, create<Resource> } from '../repositories/<domain>.repository'
+
+export async function create<Resource>(
+  db: PrismaClient,
+  input: Create<Resource>Input,
+): Promise<<Resource>Response> {
+  // business logic and validation here
+  const record = await create<Resource>(db, input)
+  // map Prisma model → response DTO (add mapper function if mapping is non-trivial)
+  return record as <Resource>Response
+}
+```
+
+### 4. Route plugin — `[endpoints_path]`
+```typescript
+import type { FastifyInstance } from 'fastify'
+import { ZodTypeProvider } from 'fastify-type-provider-zod'
+import { Create<Resource>Schema, <Resource>ResponseSchema, ErrorSchema } from '../../schemas/<domain>.schema'
+import { create<Resource> } from '../../services/<domain>.service'
+
+export async function <resource>Routes(fastify: FastifyInstance) {
+  const f = fastify.withTypeProvider<ZodTypeProvider>()
+
+  f.post('/<resources>', {
+    preHandler: [fastify.authenticate],
+    schema: {
+      body: Create<Resource>Schema,
+      response: { 201: <Resource>ResponseSchema, 400: ErrorSchema, 401: ErrorSchema },
+    },
+  }, async (request, reply) => {
+    const result = await create<Resource>(fastify.db, request.body)
+    return reply.status(201).send(result)
+  })
+}
+```
+
+## Instructions
+1. Use `LSP goto_definition` on the nearest existing route plugin to confirm plugin structure — do NOT re-read the whole file.
+2. Add schema, repository query, service method, and route plugin with single `Edit` per file.
+3. Register the new plugin in `[routes_index]`.
+4. Run: `[linter_cmd] && [type_checker_cmd]`
+5. Report: 4 files changed + registration location.
+```
+
+---
+
+### `new-component.md`
+
+```markdown
+# /new-component
+
+Scaffold a new React component following the [project_name] frontend pattern.
+
+## Argument
+`/new-component <domain> <ComponentName>`
+
+## Component Pattern (do not deviate)
+
+### 1. Component file — `[frontend_dir]/src/features/<domain>/<ComponentName>.tsx`
+```typescript
+import type { FC } from 'react'
+
+interface <ComponentName>Props {
+  // typed props — no `any`
+}
+
+export const <ComponentName>: FC<<ComponentName>Props> = ({ ... }) => {
+  return (
+    // JSX — presentation only; no direct API calls
+  )
+}
+```
+
+### 2. TanStack Query hook (if data fetching needed) — `[frontend_dir]/src/hooks/use<Domain>.ts`
+```typescript
+import { useQuery } from '@tanstack/react-query'
+import { QUERY_KEYS } from '@/lib/queryKeys'
+import { get<Domain> } from '@/lib/api/<domain>'
+
+export function use<Domain>(id: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.<domain>(id),
+    queryFn: () => get<Domain>(id),
+  })
+}
+```
+
+### 3. API client function (if new endpoint) — `[frontend_dir]/src/lib/api/<domain>.ts`
+```typescript
+import { apiClient } from './client'
+import type { <Resource>Response, Create<Resource>Input } from '@/types/<domain>'
+
+export async function create<Resource>(data: Create<Resource>Input): Promise<<Resource>Response> {
+  const { data: result } = await apiClient.post('/<resources>', data)
+  return result
+}
+```
+
+## Instructions
+1. Use `LSP goto_definition` on an existing feature component to confirm import paths.
+2. Keep component presentation-focused — no business logic, no direct Axios calls.
+3. Run: `cd [frontend_dir] && npx tsc --noEmit`
+4. Report: files created and where they fit in the feature directory.
+```
+
+---
+
+### `migrate.md`
+
+```markdown
+# /migrate
+
+Generate and apply a Prisma database migration.
+
+## Argument
+Pass the migration name: `/migrate <name>`
+Name format: lowercase with underscores, describes the change (e.g. `add_assignment_status_enum`)
+
+## Instructions
+
+1. Validate the schema first:
+   ```bash
+   cd [backend_dir] && npx prisma validate
+   ```
+   Do not proceed if validation fails.
+
+2. Generate the migration (create-only — do not apply yet):
+   ```bash
+   cd [backend_dir] && npx prisma migrate dev --name "$ARGUMENT" --create-only
+   ```
+
+3. **Review the generated SQL file in `[migration_dir]`** before applying:
+   - Confirm `CREATE TABLE` / `ALTER TABLE` / `ADD COLUMN` matches intent
+   - Watch for implicit destructive operations: column renames appear as `DROP COLUMN`
+     + `ADD COLUMN`, which destroys data — rewrite as `ALTER TABLE ... RENAME COLUMN` if needed
+   - Verify indexes are as expected
+   - Add a rollback comment at the top of the file documenting the manual reversal SQL
+
+4. Apply the migration:
+   ```bash
+   cd [backend_dir] && npx prisma migrate dev
+   ```
+
+5. Verify migration status:
+   ```bash
+   cd [backend_dir] && npx prisma migrate status
+   ```
+
+6. Regenerate the Prisma client:
+   ```bash
+   cd [backend_dir] && npx prisma generate
+   ```
+
+7. If the migration fails:
+   - Run `npx prisma migrate reset` locally (drops and recreates from scratch)
+   - Fix the schema, regenerate, and repeat from step 1
+   - Never edit the database directly — always go through Prisma migrations
+   - Never run `prisma migrate dev` in production — use `prisma migrate deploy`
+```
+
+---
+
+### `lint-fix.md`
+
+```markdown
+# /lint-fix
+
+Run linter and type checker on backend and frontend, then fix all issues found.
+
+## Instructions
+
+### Backend
+
+1. Auto-fix safe ESLint issues:
+   ```bash
+   [linter_autofix_cmd]
+   ```
+
+2. Run TypeScript type checker:
+   ```bash
+   [type_checker_cmd]
+   ```
+
+3. Fix remaining errors manually:
+   - Use `LSP hover` to check types before adding annotations
+   - Do not suppress errors with `// eslint-disable` or `// @ts-ignore` unless
+     truly unavoidable and you add a comment explaining why
+
+4. Confirm clean:
+   ```bash
+   [linter_cmd] && [type_checker_cmd] && echo "Backend OK"
+   ```
+
+### Frontend
+
+5. Auto-fix safe frontend ESLint issues:
+   ```bash
+   cd [frontend_dir] && npx eslint src/ --fix -q && echo "ESLint OK"
+   ```
+   (Omit `--ext .ts,.tsx` for ESLint v9; include it for ESLint v8)
+
+6. Run TypeScript type checker:
+   ```bash
+   cd [frontend_dir] && npx tsc --noEmit && echo "Frontend tsc OK"
+   ```
+
+7. Report: count of issues fixed, any remaining issues with file:line reference.
+```
+
+---
+
+### `phase-status.md`
+
+```markdown
+# /phase-status
+
+Show current phase progress and exact next tasks.
+
+## Instructions
+
+1. Read `[tasks_file]` — focus only on the first phase marked incomplete (`📅`).
+2. List every unchecked `[ ]` item grouped by section.
+3. Identify which items can be worked in parallel vs must be sequential.
+4. Output the prioritised work order — **no implementation, just the plan**.
+
+Keep output under 40 lines.
+```
+
+---
+
+### `run-tests.md`
+
+```markdown
+# /run-tests
+
+Run the [project_name] test suite and report results.
+
+## Argument
+Optional: `/run-tests unit` | `/run-tests integration` | `/run-tests all`
+Default: full suite.
+
+## Instructions
+
+> All backend tests run **inside Docker** via `docker compose exec api`.
+> Never run vitest directly on the host — the host may lack the correct DB and Redis environment.
+
+1. Verify the api container is running:
+   ```bash
+   docker compose ps api
+   ```
+   If not `Up`, run `docker compose up -d api` first.
+
+2. List test files:
+   ```bash
+   docker compose exec api ls [test_dir]
+   ```
+
+3. Run the full suite:
+   ```bash
+   docker compose exec api npx vitest run --reporter=verbose 2>&1 | tail -60
+   ```
+
+   Scoped variants:
+   ```bash
+   # Unit tests only (no live DB or Redis)
+   docker compose exec api npx vitest run [test_dir]/unit/ 2>&1 | tail -60
+
+   # Integration tests only
+   docker compose exec api npx vitest run [test_dir]/integration/ 2>&1 | tail -60
+
+   # Single test file
+   docker compose exec api npx vitest run [test_dir]/<file>.test.ts 2>&1 | tail -40
+   ```
+
+4. If tests fail:
+   - Read only the failing test file and the service or module it targets.
+   - Fix the root cause — do not mock away real failures.
+   - Re-run the specific failing test before re-running the full suite:
+     ```bash
+     docker compose exec api npx vitest run [test_dir]/<file>.test.ts -t "<test name>" 2>&1 | tail -30
+     ```
+
+5. Frontend component and hook tests (run on host — no Docker needed):
+   ```bash
+   cd [frontend_dir] && npx vitest run --reporter=verbose 2>&1 | tail -40
+   ```
+   Scoped to a single file:
+   ```bash
+   cd [frontend_dir] && npx vitest run src/__tests__/components/<ComponentName>.test.tsx 2>&1 | tail -30
+   ```
+
+6. Report: backend pass/fail count, frontend pass/fail count, any skipped tests and why,
+   next step if red (specific file:line).
+```
+
+---
+
+### `session-end.md`
+
+```markdown
+# /session-end
+
+Wrap up a working session: verify quality, update checklist, commit.
+
+## Argument
+Pass the phase number: `/session-end 3`
+
+## Instructions
+
+### 1. Verify lint and types are clean
+```bash
+[linter_cmd] && [type_checker_cmd] && echo "Backend OK"
+cd [frontend_dir] && npx tsc --noEmit && echo "Frontend OK"
+```
+Do not proceed to commit if either check fails.
+
+### 2. Run tests
+```bash
+[test_cmd] 2>&1 | tail -20
+```
+Do not commit if tests are red.
+
+### 3. Update checklist
+Run `/update-checklist $PHASE` — mark all verified tasks `[x]`.
+
+### 4. Commit
+```bash
+git status
+git add [backend_dir] [migration_dir] [frontend_dir] [checklist_file]
+# Replace N below with the actual phase number (e.g. 3)
+git commit -m "Phase N: <summary of what was implemented>"
+```
+
+### 5. Session summary (max 10 lines)
+```
+Phase N — <name>
+Files added : <count> (<list>)
+Files edited: <count> (<list>)
+Tests       : <pass>/<total>
+Checklist   : <X> tasks marked complete
+Next session: Phase N+1 — <first task>
+```
+```
+
+---
+
+### `update-checklist.md`
+
+```markdown
+# /update-checklist
+
+Verify completed work and mark tasks in the checklist.
+
+## Argument
+Pass phase number: `/update-checklist 3`
+
+## Instructions
+
+1. Read only the relevant phase section from `[tasks_file]`.
+
+2. For each task, verify completion using LSP — do NOT re-read whole files:
+
+   **Backend artifacts:**
+   - Prisma model: model name exists in `[models_path]` (LSP symbol lookup)
+   - Zod schema: type export exists in `[schemas_path]`
+   - Repository: functions exist in `[repositories_path]`
+   - Service: function exists in `[services_path]` (confirm no direct Prisma calls via LSP references)
+   - Route plugin: plugin registered in `[routes_index]`
+   - BullMQ worker: worker registered in `[workers_index]` (if applicable)
+
+   **Frontend artifacts (if the phase includes UI work):**
+   - React component: file exists at `[frontend_dir]/src/features/<domain>/<ComponentName>.tsx`
+   - Query hook: function exported from `[frontend_dir]/src/hooks/use<Domain>.ts`
+   - API client: function exported from `[frontend_dir]/src/lib/api/<domain>.ts`
+   - MSW handler: handler registered in `[frontend_dir]/src/mocks/handlers/<domain>.ts` (if demo mode)
+
+3. Mark verified items `[x]`. Leave unverified items `[ ]`.
+
+4. If all items in a phase are `[x]`:
+   - Change phase header from `📅` to `✅`
+   - Add: `> **Phase N completed:** YYYY-MM-DD`
+   - Update `## Overall Progress` table
+
+5. Save all changes in a single `Edit` call.
+
+## Token rule
+Read only the phase section — never the full checklist file.
+```
+
+---
+
+## File 13: `.claude/settings.json`
+
+Remove all `//` comment lines before saving — JSON does not support inline comments.
+Verify every path in `allow` exists in this project before writing.
+Replace all `[placeholder]` values with the actual paths discovered in the project.
+
+**Conditional hook:** Include `python .claude/hooks/prisma-validate.py` in the
+PostToolUse hooks array **only if** discovery step 7 confirmed that `prisma/schema.prisma`
+exists in this project. Remove the entry entirely for Drizzle or TypeORM projects.
+
+```json
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npx vitest*)",
+      "Bash(npx prisma*)",
+      "Bash(npx eslint*)",
+      "Bash(npx tsc*)",
+      "Bash(npx biome*)",
+      "Bash(npm run build*)",
+      "Bash(npm run dev*)",
+      "Bash(npm run start*)",
+      "Bash(npm run test*)",
+      "Bash(docker compose*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "mcp__plugin_playwright_playwright__browser_network_requests",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "Edit(/.claude/skills/**)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/prefer_lsp.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/ts-diagnostics.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/eslint-check.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/prisma-validate.py"
+          }
+          // REMOVE the line above if the project does NOT use Prisma (Drizzle / TypeORM projects)
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== Session End ===' && echo 'Run /update-checklist to mark completed tasks.' && echo 'Run: git add -p && git commit' && echo '=================='"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+## File 14: `.claude/settings.local.json`
+
+User-specific permissions that must NOT be committed to the repository.
+Create this file alongside `settings.json` and add it to `.gitignore`.
+
+Typical entries for this file:
+- User home directory read access (`Read(//c/Users/**)` on Windows, `Read(/home/[user]/**)` on Linux/Mac)
+- WSL mount paths (`Read(//mnt/c/**)`) on Windows with WSL
+- Personal tool paths not shared by the team
+- One-off `Bash(...)` entries added during debugging sessions
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/**)",
+      "Read(//mnt/c/**)"
+    ]
+  }
+}
+```
+
+---
+
+## Final validation checklist
+
+Run these checks after generating every file. Fix any failure before handing off.
+
+### Ownership checks (no fact in two places)
+- [ ] Search `"BullMQ"` across all skill files — queue topology table appears in **one file only** (architecture skill)
+- [ ] Search `"Redis"` across all skill files — DB slot table appears in **one file only** (architecture skill)
+- [ ] Search `"outbox"` — full outbox spec appears in **one file only** (backend-patterns skill)
+- [ ] Search `"$transaction"` — canonical transaction pattern appears in **one file only** (database-patterns skill)
+- [ ] Search `"ZodTypeProvider"` — wiring pattern appears in **one file only** (api-contract-guidelines skill)
+- [ ] Search for domain principles — appear only in `CLAUDE.md`
+
+### Placeholder checks (no unreplaced tokens)
+- [ ] Grep all generated files for the pattern `\[[a-z_]+\]` (bracketed lowercase slug) —
+      must return zero matches; this targets only unreplaced placeholders and will not
+      false-positive on valid TypeScript syntax (`array[0]`, `Promise<T[]>`, etc.)
+- [ ] Confirm the grep excludes node_modules and .git directories
+- [ ] Grep all command files for any path that does NOT exist in this project's directory structure
+- [ ] `ts-diagnostics.py` `FRONTEND_DIR` and `BACKEND_DIR` match the actual folder names
+- [ ] `eslint-check.py` `BACKEND_ABS` is the absolute path, not a relative one
+- [ ] `prisma-validate.py` `BACKEND_DIR` is the absolute path, not a relative one
+
+### Settings checks
+- [ ] `settings.json` contains no `//` comment lines — validate with `python -c "import json; json.load(open('.claude/settings.json'))"`
+- [ ] `settings.local.json` is listed in `.gitignore`
+- [ ] Every `Bash(...)` entry in `settings.json` allow list resolves to a real executable in this project
+
+### Quality checks
+- [ ] `prefer_lsp.py` does NOT list `.py` in `lsp_exts` — there is no Python application code
+- [ ] `CLAUDE.md` is 60–65 lines or under
+- [ ] Search `"Grep"` in `CLAUDE.md` — must be exactly one sentence in the code nav policy
+- [ ] No command file references the name of a previous or unrelated project
+- [ ] `new-endpoint.md` route plugin pattern matches the actual Fastify version installed
+- [ ] `eslint-check.py` — `ESLINT_V9` flag matches the ESLint version in backend `package.json`
+- [ ] `prisma-validate.py` hook is present in `settings.json` only if `prisma/schema.prisma` exists
+- [ ] Vitest unit test directory (`[test_dir]/unit/`) and integration directory (`[test_dir]/integration/`)
+      are referenced consistently across `run-tests.md` and `testing-quality-gates` skill
+- [ ] `testing-quality-gates` skill is referenced in `CLAUDE.md` Skill Routing section
+
+### Architecture integrity checks
+- [ ] Search `import.*PrismaClient` in `[services_path]` — must return zero results; services
+      receive `db` as a parameter, they do not import PrismaClient directly
+- [ ] Search `import.*PrismaClient` in `[endpoints_path]` — must return zero results; routes
+      receive `db` via Fastify decoration, never imported directly
+- [ ] Grep `[repositories_path]` — verify at least one repository file exists per domain that has a service
+- [ ] Search `prisma\.` in `[services_path]` — must return zero results; all Prisma calls must be in repositories
+- [ ] Search `new BullMQ.Queue` or `new Queue` in `[endpoints_path]` — must return zero results;
+      queues are never created inside route handlers
+```
