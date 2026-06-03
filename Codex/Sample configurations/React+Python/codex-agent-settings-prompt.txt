@@ -18,11 +18,16 @@ Before generating anything, read the project to discover its actual structure:
 4. Identify: frontend framework, backend framework, database(s), cache, queue, search,
    object storage, linter(s), test runner(s), migration tool, i18n library
 5. Check whether `Docs/` (or `docs/`) exists and list its contents
-6. Find the task checklist file (commonly `Docs/tasks.md` or similar)
-7. Confirm the absolute path to the backend directory (needed for `.agents` hooks)
-8. Confirm the relative path to the frontend directory (needed for diagnostics hooks)
-9. Inspect whether `.agents/settings.json` already exists and preserve the compatible shape if it does
-10. Inspect whether `.agents/skills/`, `.agents/hooks/`, and `.agents/commands/` already exist
+6. Read the architecture/source-of-truth docs that exist in this project, commonly solution architecture,
+   implementation plan, deployment, infrastructure, database, operations, or backend design docs
+7. Extract any production database connectivity rules from those docs, especially rules involving
+   PgBouncer/poolers, SQLAlchemy async engines, asyncpg prepared statements, worker engines,
+   SQLite test exemptions, and whether migrations bypass poolers
+8. Find the task checklist file (commonly `Docs/tasks.md` or similar)
+9. Confirm the absolute path to the backend directory (needed for `.agents` hooks)
+10. Confirm the relative path to the frontend directory (needed for diagnostics hooks)
+11. Inspect whether `.agents/settings.json` already exists and preserve the compatible shape if it does
+12. Inspect whether `.agents/skills/`, `.agents/hooks/`, and `.agents/commands/` already exist
 
 Then generate only Codex-supported repository resources, preferring:
 
@@ -43,6 +48,7 @@ Each fact has exactly ONE canonical home. Violations cost tokens every conversat
 | Cache/DB slot assignments | `architecture-deep-dive` skill |
 | Search/vector storage separation rule | `architecture-deep-dive` skill |
 | Transactional outbox full spec | `backend-patterns` skill |
+| Database connection-pooling implementation rules | `backend-patterns` skill, with a one-line routing hint in `AGENTS.md` and verification-only guidance in `testing-quality-gates` |
 | Cross-cutting principles (AI role, moderation) | `AGENTS.md` |
 | Frontend conventions | `frontend-guidelines` skill |
 | Lint, typecheck, tests, coverage, and Codex-safe Python/SQLite execution | `testing-quality-gates` skill |
@@ -87,6 +93,7 @@ Use `backend-patterns` for [framework] backend design, services, repositories, a
 - [Example: CQRS writes -> transactional DB; discovery -> search system]
 - [Example: Heavy tasks run async via worker]
 - [Example: `NEXT_PUBLIC_DEMO_MODE=true` enables MSW mocks]
+- [If the discovered architecture requires PgBouncer/pooler + asyncpg handling, include exactly one short routing hint here and put the full rule in `backend-patterns`]
 
 ## Code Navigation Policy
 Prefer LSP for `[primary typed language extensions]` symbol lookup; use Grep only as fallback for config strings, comments, TODOs, and non-symbol literals.
@@ -229,6 +236,22 @@ Use clean layering:
 4. Model/data layer - `[models_path]` - ORM definitions only
 
 API -> Service -> Repository -> Model. Services own sessions and pass `db` into repository functions. Do not put SQLAlchemy `select()`, `insert()`, `update()`, `delete()`, joins, filters, ordering, or pagination logic in service or endpoint files.
+
+## Database & Connection Pooling Rules
+
+Include this section only when the discovered project uses SQLAlchemy async engines with
+PostgreSQL connection pooling behavior that needs special handling, such as PgBouncer
+with `postgresql+asyncpg`. Make this the canonical backend implementation rule.
+
+When PgBouncer transaction pooling + asyncpg is detected, preserve these facts if supported
+by the project's architecture/source docs:
+
+- `prepared_statement_name_func` with unique names is the actual prepared-statement collision fix; `statement_cache_size=0` alone is not sufficient.
+- `statement_cache_size`, `prepared_statement_cache_size`, and `prepared_statement_name_func` are DBAPI connection arguments and belong under `connect_args`, not as top-level `create_async_engine(...)` kwargs.
+- The rule applies to every `postgresql+asyncpg` SQLAlchemy async engine, including web/API engines and background worker engines; gate it so SQLite test engines do not receive asyncpg-only args.
+- Alembic or schema migrations bypass PgBouncer/poolers and connect directly to PostgreSQL when the architecture says transaction pooling is unsafe for DDL.
+- Reuse the project's shared database helper if one exists; otherwise instruct generation to create one in the backend DB/core module rather than hand-rolling subsets in multiple engines.
+- Link to the discovered architecture/deployment/source doc that established this rule, using the actual path found in the project.
 
 ## API Design Rules
 - [rule]
@@ -455,6 +478,7 @@ Include this section only when Python/pytest/SQLite tooling is detected.
   ```
 - If coverage.py raises a file permission, SQLite data-file, or rename error while tests pass, report the pytest pass count separately and mark coverage as environment-blocked. Coverage.py uses a SQLite-backed data file even when the application test database is in-memory.
 - Use Docker/Postgres, not SQLite, for Alembic migrations and PostgreSQL-specific behavior such as JSONB, CITEXT, partial indexes, `ON CONFLICT`, PgBouncer, and asyncpg settings.
+- If the discovered architecture has PgBouncer/pooler + asyncpg connection rules, verify those with Docker/Postgres or the project's integration environment, not SQLite; include the actual focused test path and environment variable names if the project already defines them.
 
 ## Failure Handling
 
@@ -612,6 +636,7 @@ Special rule for `run-tests.md`:
 - If Python/pytest with SQLite is detected, prefer in-memory SQLite test fixtures and include `python -m pytest ... -p no:cacheprovider`; do not generate file-backed SQLite migration probes.
 - If Python coverage is requested or coverage tooling is detected, include a focused `--cov` command that writes coverage data inside the repo or a known writable temp directory.
 - If Alembic/PostgreSQL-specific behavior is detected, instruct Codex to verify migrations with Docker/Postgres rather than SQLite.
+- If PgBouncer/pooler + asyncpg behavior is detected, include the discovered focused regression test or integration-check command. Do not invent a fixed filename; use the actual test path if it exists, or tell Codex to add a targeted regression test under the project's existing backend test structure.
 - For failing tests, instruct Codex to rerun the specific failing unit test in the same detected execution mode before rerunning the full suite.
 
 ### `fix-error.md` blueprint
@@ -759,6 +784,7 @@ Pass migration name: `/migrate <name>`
    - Confirm upgrade/apply creates only expected objects.
    - Confirm downgrade/rollback reverses the change safely when the tool supports it.
    - Confirm tenant/platform schema rules if this project has schema separation.
+   - Confirm migrations connect through the direct PostgreSQL path rather than PgBouncer/poolers when the discovered architecture requires that.
    - Confirm no destructive data loss unless explicitly requested.
 
 4. Apply:
@@ -1027,5 +1053,7 @@ Run these checks after generating all files:
 - [ ] Python/pytest commands include `python -m pytest ... -p no:cacheprovider` only when Python tooling is detected
 - [ ] Python coverage commands avoid file-backed SQLite migration probes and explain coverage.py file errors can be environment-blocked
 - [ ] Alembic/PostgreSQL-specific checks use Docker/Postgres rather than SQLite when PostgreSQL behavior matters
+- [ ] If PgBouncer/pooler + asyncpg behavior is discovered, `AGENTS.md` contains only a one-line routing hint, `backend-patterns` contains the full implementation rule, and `testing-quality-gates` contains verification-only guidance
+- [ ] If asyncpg prepared-statement collision handling is discovered, generated backend guidance states that unique `prepared_statement_name_func` is the fix, the three settings live in `connect_args`, web and worker engines are covered, SQLite is exempt, and migrations bypass PgBouncer/poolers when required by the architecture
 
 Output the generated files with minimal duplication and strong ownership boundaries so Codex spends fewer tokens rediscovering the same project facts.
