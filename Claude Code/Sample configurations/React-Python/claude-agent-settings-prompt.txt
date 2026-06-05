@@ -22,6 +22,12 @@ Before generating anything, **read the project** to discover its actual structur
 6. Find the task checklist file (commonly `Docs/tasks.md` or similar)
 7. Confirm the absolute path to the backend directory (needed for PostToolUse ruff hook)
 8. Confirm the relative path to the frontend directory (needed for ts-diagnostics hook)
+9. Determine the **database connection topology** from the architecture/solution-architecture
+   document and the infrastructure config (compose/helm/terraform) and the DB settings module:
+   is there a connection pooler (e.g. PgBouncer, RDS Proxy, pgcat, Supavisor)? What **pool mode**
+   (session / transaction / statement)? What **DB driver** (e.g. asyncpg, psycopg, asyncmy) and
+   does it use server-side prepared statements? Does the migration tool connect through the
+   pooler or directly to the database?
 
 Then generate every file below. Every detail must come from what you found —
 never use placeholder names, never copy content from another project.
@@ -37,6 +43,7 @@ Each fact has exactly ONE canonical home. Violations cost tokens every conversat
 | Cache/DB slot assignments | architecture skill |
 | No-separate-vector-DB rule | architecture skill |
 | Transactional outbox full spec | backend-patterns skill |
+| Connection-pooling / DB-driver prepared-statement rules | backend-patterns skill |
 | Cross-cutting principles (AI role, moderation) | CLAUDE.md |
 | Frontend conventions | frontend-guidelines skill |
 
@@ -84,6 +91,7 @@ Use `backend-patterns` for [framework] backend design, services, repositories,
 - Transactional outbox: domain events write to `[table]` in the same DB transaction
 - [Cache]: db=0 broker · db=1 [use] · db=2 [use] — never mix
 - Heavy tasks ([list]) are always async via [worker]
+- [ONLY IF a transaction/statement-mode pooler + prepared-statement async driver is used:] DB connects via `[pooler]` (`[pool_mode]` mode) + `[driver]`; every engine must use the shared connect-args helper (incl. the unique prepared-statement-name fix); `[migration_tool]` connects directly, bypassing the pooler — see backend-patterns skill
 - `[DEMO_ENV_VAR]=true` enables [mock library]
 
 ## Code navigation policy
@@ -221,6 +229,37 @@ Use clean layering:
 4. **Model/data layer** — `[path: backend/app/models/]` — ORM definitions only
 
 API → Service → Repository → Model. Services own sessions and pass `db` into repository functions. No SQLAlchemy `select()`/`insert()`/`update()`/`delete()` in service or endpoint files.
+
+## Database & Connection Pooling Rules
+
+[INCLUDE THIS SECTION ONLY IF the project connects through a connection pooler in
+ transaction or statement pooling mode (PgBouncer, RDS Proxy, pgcat, Supavisor, …) AND
+ uses an async driver that relies on server-side prepared statements (asyncpg, asyncmy, …).
+ Determine this from the architecture/solution-architecture document, the infrastructure
+ config (compose/helm/terraform), and the DB settings module. If the project uses
+ session-mode pooling, no pooler, or a driver that does not use server-side prepared
+ statements, OMIT this section entirely — do not emit dead rules.]
+
+The app connects via **[pooler] in [pool_mode] mode** using **[driver]**. In this
+combination, **every** [ORM] engine / connection factory MUST be built with the driver
+connect-args that prevent prepared-statement name collisions. Centralize them in one
+shared helper ([e.g. `app/core/db.py::_pooler_connect_args()`]) and reuse it for every
+engine — never hand-roll a subset.
+
+- **The fix is making every prepared-statement name unique** ([driver mechanism — e.g.
+  asyncpg `prepared_statement_name_func` returning a uuid-based name]). Merely disabling
+  the statement cache ([e.g. `statement_cache_size=0`]) does NOT prevent the error — the
+  driver still auto-names statements sequentially per connection, and those names collide
+  on shared backends under [pool_mode] pooling → [e.g. `DuplicatePreparedStatementError:
+  prepared statement "..." already exists`].
+- All pooler args are **driver / DBAPI connect arguments** → put them in [connect_args],
+  never as top-level [`create_engine()` / engine] kwargs.
+- Applies to **every** engine: the [web/API] engine AND the [worker/background] engine.
+  Gate on the production driver being in use — the **test / in-memory database is exempt**.
+- **Schema migrations bypass the pooler**: [migration_tool] connects **directly** to the
+  database, because [pool_mode] pooling mishandles some DDL.
+- Add a **regression test** that reproduces the collision under the real pooler (gated by
+  an env flag) with a negative control proving the default config still fails.
 
 ## API Design Rules
 [4–6 rules on endpoint conventions, typed schemas, auth, response shape]
@@ -1008,6 +1047,9 @@ Run these checks after generating all files:
 - [ ] Search `"Redis"` across all files — DB slot table appears in **one file only** (architecture skill)
 - [ ] Search `"vector"` — "no separate vector DB" appears in **one file only** (architecture skill)
 - [ ] Search `"outbox"` — full outbox spec appears in **one file only** (backend-patterns skill)
+- [ ] If a transaction/statement-mode pooler + prepared-statement async driver is used: the connection-pooling rule appears in **backend-patterns skill only** (canonical), with a ONE-line routing hint in `CLAUDE.md`
+- [ ] That rule names the **unique prepared-statement-name** mechanism as the fix (not just cache disabling), places args in **connect_args** (not top-level engine kwargs), covers **both** web and worker engines, and notes **migrations bypass the pooler**
+- [ ] If no pooler / session-mode / non-prepared-statement driver: the connection-pooling section is **absent** (no dead rules)
 - [ ] Search for domain principles — appear only in `CLAUDE.md`
 - [ ] Search `"Grep"` in `CLAUDE.md` — must be one sentence, not a paragraph
 - [ ] Grep all command files for any placeholder `[...]` still unreplaced
