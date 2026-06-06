@@ -1,7 +1,8 @@
 Files to refer:
 ---------------
-1. Docs/Solution-Architecture-Document.md
-2. Docs/implementation-plan.md
+1. Docs/SYSTEM_ARCHITECTURE_DOCUMENT
+2. Docs/PHASE1_IMPLEMENTATION_PLAN.md
+3. docker-compose.dev.yml
 
 please validate the skills, hooks and commands based on the following prompts are aligning with the architecture & tasks. If there are any change required, please update respective MD files.
 

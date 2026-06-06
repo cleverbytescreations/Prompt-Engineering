@@ -1,0 +1,592 @@
+
+=========================================================================================
+
+>>> Prompt to Generate Scope / Requirement Document:
+
+You are an experienced Business Analyst, Product Owner, and Solution Architect.
+
+I have a use case document in Markdown format for a <Application name>. Your task is to analyze the provided use case file and create a detailed Scope / Requirement Document.
+
+Input file to refer:
+- Docs/<USECASE_FILE_NAME>.md
+
+Output file:
+------------
+Docs/requirement-document.md
+
+Preferred Technology Stack:
+- UI: <React / Next.js / Angular / Vue - mention preferred UI framework>
+- Backend: <FastAPI / Spring Boot / Node.js>
+- Database: <PostgreSQL / MySQL>
+- Search: <Elasticsearch / OpenSearch>
+- Storage: <S3 / MinIO / Azure Blob>
+- Authentication: <Keycloak / Auth0 / Azure AD / custom OAuth2>
+- AI / RAG, if applicable: <OpenAI / Azure OpenAI / local LLM / vector DB>
+- Deployment: <Docker / Kubernetes / Cloud / On-premise>
+
+Objective:
+Create a complete Scope / Requirement Document from the use case file.
+
+The document should include:
+
+1. Introduction
+   - Purpose of the platform
+   - Background
+   - Target users
+   - Business objectives
+
+2. Scope of the Application
+   - In-scope features
+   - Out-of-scope items
+   - Assumptions
+   - Dependencies
+   - Constraints
+
+3. User Roles and Access Levels
+   - Admin
+   - Moderator / Legal Office
+   - Member / Professional User
+   - Guest / Public User, if applicable
+   - Any other roles identified from the use case
+
+4. Functional Requirements
+   Organize the requirements module-wise, such as:
+   - User registration and authentication
+   - Member approval / restricted access
+   - Legal document repository
+   - Country-wise / region-wise legal database
+   - News and legal update aggregation
+   - Moderated Q&A / discussion forum
+   - Content publishing workflow
+   - Search and filtering
+   - Notifications
+   - Admin management
+   - Reports and dashboards
+   - Audit trail and activity tracking
+
+5. Detailed Requirement Table
+   For each requirement, provide:
+   - Requirement ID
+   - Module
+   - Requirement description
+   - User role
+   - Priority: Must Have / Should Have / Could Have
+   - Complexity: Low / Medium / High
+   - Remarks
+
+6. Non-Functional Requirements
+   Cover:
+   - Security
+   - Authentication and authorization
+   - Data privacy
+   - Auditability
+   - Performance
+   - Scalability
+   - Availability
+   - Maintainability
+   - Backup and recovery
+   - Compliance considerations
+
+7. Workflow Requirements
+   Include workflow descriptions for:
+   - Member onboarding
+   - Legal content submission and approval
+   - Question submission and moderation
+   - Answer publishing
+   - News publishing
+   - Admin review and audit
+
+8. Reporting Requirements
+   Include:
+   - User activity reports
+   - Content usage reports
+   - Country-wise legal content reports
+   - Q&A status reports
+   - Moderator activity reports
+
+9. MVP Scope
+   Identify the minimum features required for the first release.
+
+10. Future Enhancements
+   Identify features that can be planned for later phases, such as:
+   - AI-based semantic search
+   - RAG-based legal assistant
+   - Multi-language support
+   - Advanced analytics
+   - API integrations with external legal sources
+   - Mobile app
+
+11. Acceptance Criteria
+   Provide clear acceptance criteria for major modules.
+
+Output Format:
+- Use professional software requirement document format.
+- Use clear headings and tables.
+- Avoid vague statements.
+- Convert the use cases into actionable requirements.
+- Clearly separate MVP scope and future scope.
+- If any requirement is unclear, list it under “Clarifications Required”.
+
+======================================================================================================================================
+
+>>> Prompt to Generate Solution Architecture Document:
+
+You are an experienced Solution Architect.
+
+Objective:
+Generate a professional Solution Architecture Document based on the provided business problem, use cases, requirement document, scope note, proposal, or stakeholder inputs.
+
+Important Architecture Boundary:
+This document must focus on Solution Architecture, not detailed System/Technical Architecture.
+
+Solution Architecture should focus on:
+
+* Translating business needs into an end-to-end technology solution.
+* Explaining what solution is proposed and why.
+* Mapping business capabilities to application modules, integrations, data flows, and technology choices.
+* Identifying major software components, platforms, cloud services, third-party systems, and operational needs.
+* Supporting stakeholder alignment, cost awareness, phasing, implementation planning, and decision-making.
+
+Avoid going too deep into:
+
+* Server-level configuration
+* Detailed network topology
+* Low-level infrastructure commands
+* Source code structure
+* Detailed DevOps pipeline implementation
+* Database tuning parameters
+* Hardware-level specifications
+* Coding standards
+
+Include technical depth only where it is required to justify the solution, explain feasibility, identify risks, or support implementation planning.
+
+Application Name:
+<APPLICATION_NAME>
+
+Input Documents / References:
+
+1. <Requirement document / business problem / use case document>
+2. <Scope document / proposal / stakeholder notes, if available>
+3. <Existing system details / constraints, if available>
+4. <Preferred technology stack, if any>
+5. <Compliance, hosting, budget, or timeline constraints, if any>
+
+Instructions:
+
+1. Analyze the given inputs carefully.
+2. Identify the business goals, users, actors, processes, pain points, functional needs, integrations, data needs, security needs, reporting needs, and operational expectations.
+3. Create a clear Solution Architecture Document suitable for business stakeholders, product owners, project managers, technical leads, and implementation teams.
+4. Keep the language business-friendly but technically meaningful.
+5. Clearly separate confirmed requirements from assumptions.
+6. Do not invent unrealistic features or technologies.
+7. If information is missing, document it under assumptions, dependencies, risks, and open questions.
+8. If the project is large, recommend phased implementation such as MVP / Phase 1 / Phase 2.
+9. Ensure the architecture is practical, secure, scalable, maintainable, and cost-conscious.
+10. Use diagrams in Mermaid format where useful.
+
+Expected Output File:
+Docs/SOLUTION_ARCHITECTURE_DOCUMENT.md
+
+Document Structure:
+
+1. Executive Summary
+
+* Brief overview of the business problem
+* Proposed solution summary
+* Key business benefits
+* High-level recommendation
+
+2. Business Context
+
+* Business background
+* Current challenges / pain points
+* Business objectives
+* Expected outcomes
+* Key stakeholders
+
+3. Architecture Scope
+
+* Purpose of this architecture document
+* In-scope capabilities
+* Out-of-scope capabilities
+* Assumptions
+* Constraints
+* Dependencies
+
+4. Business Capability Mapping
+   Create a table mapping:
+
+* Business need / use case
+* Proposed solution capability
+* Application module / component
+* Business value delivered
+
+5. Proposed Solution Overview
+
+* High-level description of the solution
+* Major application areas
+* How the solution addresses the business problem
+* Key design principles used
+
+6. User Roles and Actors
+
+* Business users
+* Administrative users
+* External users
+* System actors
+* Third-party systems
+* Role-wise responsibility summary
+
+7. Functional Solution Architecture
+   Describe the major functional modules of the solution.
+
+For each module, include:
+
+* Purpose
+* Key features
+* Primary users
+* Major inputs and outputs
+* Dependencies on other modules
+
+Example modules:
+
+* User Management
+* Registration / Onboarding
+* Case / Transaction / Request Management
+* Workflow / Approval Management
+* Document Management
+* Search
+* Reports and Dashboards
+* Notifications
+* Administration
+* Integration Management
+
+Include only modules relevant to the provided requirements.
+
+8. High-Level Logical Architecture
+   Provide a high-level logical architecture showing:
+
+* User channels
+* Frontend applications
+* Backend services
+* Database layer
+* File / object storage
+* Integration layer
+* Authentication and authorization
+* Reporting / analytics layer
+* External systems
+
+Include a Mermaid architecture diagram.
+
+9. Application Component Architecture
+   Describe the major solution components and their responsibilities.
+
+Include a table with:
+
+* Component name
+* Responsibility
+* Users / consumers
+* Key dependencies
+* Notes
+
+Do not go into low-level class design or code structure.
+
+10. Integration Architecture
+    Describe how the solution interacts with other systems.
+
+Include:
+
+* External systems involved
+* Type of integration: API, file upload, batch, webhook, message queue, manual import/export
+* Direction of data flow
+* Authentication/security needs
+* Error handling and retry expectations
+* Integration risks
+
+Include an integration summary table.
+
+11. Data Architecture
+    Describe the major data areas required by the solution.
+
+Include:
+
+* Key business entities
+* High-level data relationships
+* Data ownership
+* Data lifecycle
+* Data retention needs
+* Data privacy considerations
+* Migration needs, if any
+
+Avoid detailed physical database design unless explicitly required.
+
+12. Security and Access Control Architecture
+    Describe the solution-level security approach.
+
+Include:
+
+* Authentication approach
+* Authorization / role-based access control
+* User lifecycle management
+* Data protection
+* API security
+* Audit trail
+* Secure file handling, if applicable
+* Privacy and compliance considerations
+
+13. Workflow and Process Architecture
+    Include this section if the requirement involves approval flows, request lifecycle, task routing, review, validation, escalation, or status tracking.
+
+Describe:
+
+* Key workflows
+* Workflow stages
+* Role-based actions
+* Status transitions
+* Notifications
+* Exception handling
+
+Include a Mermaid workflow diagram if useful.
+
+14. Reporting and Dashboard Architecture
+    Include this section if reporting, MIS, analytics, KPIs, monitoring, or dashboards are required.
+
+Describe:
+
+* Operational reports
+* Management dashboards
+* Role-based dashboards
+* Filters and drill-downs
+* Export requirements
+* Data refresh expectations
+
+15. Notification Architecture
+    Include this section if email, SMS, WhatsApp, push notification, or in-app notification is required.
+
+Describe:
+
+* Notification channels
+* Notification triggers
+* Template management
+* Recipient rules
+* Delivery tracking
+* Failure handling
+
+16. Document Management Architecture
+    Include this section if the solution handles file uploads, certificates, scanned documents, PDFs, images, generated reports, or attachments.
+
+Describe:
+
+* File upload process
+* Storage approach
+* Metadata tagging
+* Versioning
+* Access control
+* Preview / download
+* OCR or text extraction, if applicable
+* Retention and archival
+
+17. Search Architecture
+    Include this section if the solution requires search by name, ID, keywords, metadata, full text, filters, or semantic search.
+
+Describe:
+
+* Search use cases
+* Search fields
+* Filter criteria
+* Full-text search needs
+* Indexing approach
+* Access-controlled search results
+
+18. AI / ML Architecture
+    Include this section only if the requirement includes AI, chatbot, OCR, prediction, recommendation, anomaly detection, RAG, LLM, NLP, computer vision, or automation.
+
+Describe:
+
+* AI use cases
+* AI components
+* Data sources
+* Model / LLM usage
+* RAG or vector search approach, if applicable
+* Human-in-the-loop review
+* Confidence scoring
+* Guardrails
+* Auditability
+* AI risks and mitigations
+
+19. Technology Stack Recommendation
+    Recommend a practical technology stack.
+
+Include:
+
+* Frontend
+* Backend
+* Database
+* Cache / queue, if required
+* Search engine, if required
+* Object storage, if required
+* Authentication
+* Reporting / visualization
+* Hosting / deployment option
+* Third-party services
+
+For each major technology choice, include:
+
+* Recommended option
+* Reason for recommendation
+* Alternatives considered, if relevant
+
+Keep the explanation at solution decision level, not low-level implementation level.
+
+20. Deployment View
+    Provide a high-level deployment view.
+
+Include:
+
+* Recommended hosting model
+* Environments: development, testing, staging, production
+* Major deployable components
+* High-level scalability approach
+* Backup and recovery expectations
+* Monitoring needs
+
+Avoid detailed server commands or infrastructure scripts.
+
+21. Non-Functional Requirements
+    Capture solution-level NFRs.
+
+Include:
+
+* Performance expectations
+* Scalability
+* Availability
+* Reliability
+* Maintainability
+* Usability
+* Security
+* Observability
+* Compliance
+* Backup and recovery
+
+Where exact numbers are not available, state assumptions and recommended targets.
+
+22. Compliance and Governance
+    Include this section if the solution involves healthcare, finance, government, legal, education, identity, personal data, or regulated workflows.
+
+Describe:
+
+* Applicable compliance considerations
+* Data privacy
+* Consent, if applicable
+* Auditability
+* Access control
+* Data retention
+* Reporting obligations
+
+23. Cost and Licensing Considerations
+    Describe:
+
+* Major cost drivers
+* Build vs buy considerations
+* Open-source vs commercial tools
+* Third-party licensing needs
+* Cloud / infrastructure cost considerations
+* Cost optimization recommendations
+
+Do not provide exact pricing unless source data is available.
+
+24. Architecture Decisions
+    Create an Architecture Decision Summary table.
+
+Columns:
+
+* Decision area
+* Recommended decision
+* Reason
+* Alternatives considered
+* Impact
+
+25. Risks and Mitigation
+    Create a risk table covering:
+
+* Business risks
+* Functional risks
+* Technical risks
+* Integration risks
+* Security risks
+* Operational risks
+* Cost risks
+
+For each risk, include:
+
+* Risk description
+* Impact
+* Probability
+* Mitigation
+
+26. Implementation Roadmap
+    Provide a recommended phased roadmap.
+
+Include:
+
+* Phase / milestone
+* Scope
+* Key deliverables
+* Dependencies
+* Expected outcome
+
+Separate MVP scope from future enhancements where applicable.
+
+27. Assumptions, Dependencies, and Open Questions
+    Clearly list:
+
+* Business assumptions
+* Technical assumptions
+* Client dependencies
+* Third-party dependencies
+* Open questions requiring clarification
+
+28. Appendix
+    Include only if required:
+
+* Glossary
+* Reference documents
+* Use case mapping
+* Requirement traceability summary
+* Diagram notes
+
+Section Selection Rules:
+Use the following rules to decide optional sections:
+
+* If the input contains personal data, healthcare, legal, finance, government, identity, student data, employee data, or citizen data, include Security, Compliance, Audit, Data Privacy, and Governance in detail.
+* If the input contains AI, chatbot, OCR, recommendation, prediction, RAG, LLM, NLP, image processing, anomaly detection, or automation, include AI / ML Architecture.
+* If the input contains mobile app, field users, GPS, camera, offline usage, or push notifications, include Mobile Application Architecture as an additional section.
+* If the input contains approvals, review, validation, routing, status tracking, escalation, or SLA, include Workflow and Process Architecture.
+* If the input contains file upload, scanned documents, certificates, reports, images, PDFs, or attachments, include Document Management Architecture.
+* If the input contains dashboards, analytics, MIS, KPIs, reports, or monitoring, include Reporting and Dashboard Architecture.
+* If the input contains APIs, ERP, CRM, payment gateway, biometric devices, government portals, external databases, or third-party platforms, include Integration Architecture in detail.
+* If the input contains multi-organization, tenant, branch, department, customer-specific configuration, or SaaS model, include Multi-Tenant / Multi-Organization Architecture.
+* If the input contains payment, billing, invoice, subscription, reconciliation, or refunds, include Payment Architecture.
+* If the input contains migration from an existing system, include Migration Strategy.
+
+Quality Validation:
+Before finalizing the document, validate that:
+
+1. The solution clearly addresses the business problem.
+2. Each major use case is mapped to a solution capability.
+3. The document explains what is proposed and why.
+4. The level of detail remains appropriate for Solution Architecture.
+5. Technical details are included only where needed for feasibility and decision-making.
+6. Functional modules, integrations, data, security, and deployment views are covered.
+7. Assumptions, risks, dependencies, and open questions are clearly documented.
+8. The document can be used as input for estimation, implementation planning, and stakeholder review.
+
+Output Format:
+
+* Generate the final document in Markdown.
+* Use clear headings and numbering.
+* Use tables where useful.
+* Use Mermaid diagrams where useful.
+* Keep the tone professional and client-ready.
+
+=========================================================================================
