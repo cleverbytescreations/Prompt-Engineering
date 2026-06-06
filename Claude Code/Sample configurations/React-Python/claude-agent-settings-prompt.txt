@@ -28,6 +28,11 @@ Before generating anything, **read the project** to discover its actual structur
    (session / transaction / statement)? What **DB driver** (e.g. asyncpg, psycopg, asyncmy) and
    does it use server-side prepared statements? Does the migration tool connect through the
    pooler or directly to the database?
+10. Identify any **reference / master data** the system serves (lookup tables, category/
+   config tables, sequence configs, enums-in-DB) exposed via read-heavy `GET` endpoints,
+   and whether a **read-through cache helper** already exists (e.g. `core/cache.py`) or a
+   cache (Redis/equivalent) is available to add one. Note the env var / setting that controls
+   its TTL/eviction window, and which admin/screen write paths must invalidate it.
 
 Then generate every file below. Every detail must come from what you found —
 never use placeholder names, never copy content from another project.
@@ -41,6 +46,7 @@ Each fact has exactly ONE canonical home. Violations cost tokens every conversat
 | Fact | Canonical file |
 |---|---|
 | Cache/DB slot assignments | architecture skill |
+| Reference/master-data read-through cache pattern (read-through + invalidate-on-write + TTL eviction) | backend-patterns skill |
 | No-separate-vector-DB rule | architecture skill |
 | Transactional outbox full spec | backend-patterns skill |
 | Connection-pooling / DB-driver prepared-statement rules | backend-patterns skill |
@@ -153,6 +159,9 @@ Use [S3/MinIO/Azure Blob] for: [list of asset types]
 Use [Redis/equivalent] with [N] dedicated slots:
 - **db=N** — [purpose] ([TTL, eviction policy, key pattern])
 - **db=N** — [purpose] ([TTL, eviction policy, key pattern])
+[If the system serves quasi-static reference/master data, one slot/use is a read-through
+ cache for it — state its TTL + eviction window here. The read-through + invalidate-on-write
+ implementation pattern is owned by the **backend-patterns skill**; do not spec it here.]
 Do not mix data across slots.
 
 ### Event / Async Layer
@@ -208,7 +217,8 @@ description: Use for [framework] backend design, clean architecture, services,
 
 Use this skill when the task involves:
 [bullet list — framework design, module structure, service/repo boundaries,
- database interaction, async processing, cache, AI orchestration, API design]
+ database interaction, async processing, cache, reference/master-data read-through
+ caching, AI orchestration, API design]
 
 ## Backend Baseline
 
@@ -311,6 +321,45 @@ Typical pattern:
 ### Redis DB Slot Strategy
 See **architecture-deep-dive skill → Cache / Queue** for canonical DB slot assignments
 and TTL rules.
+
+## Reference / Master Data Cache Pattern
+
+[INCLUDE THIS SECTION when the project serves quasi-static reference/master data
+ (lookup tables, category/config tables, sequence configs, enums-in-DB) via read-heavy
+ `GET` endpoints AND a cache (Redis/equivalent) is available. OMIT entirely if the project
+ has no such data or no cache layer — do not emit a dead section.]
+
+All read endpoints for quasi-static reference/master data MUST use a read-through cache
+helper (`[e.g. app/core/cache.py]`) — never hit [DB] on every request for data that almost
+never changes, and never import the cache client (`[redis]`) directly in service files. Go
+through the helper (`cache_get` / `cache_set` / `cache_delete`).
+
+### Freshness — two layers, BOTH required
+1. **Explicit invalidation on write** — the service calls `cache_delete` for every affected
+   key variant **after** the DB commit, whenever an admin/screen mutates the data
+   (create / update / deactivate). Primary mechanism: users see fresh data immediately after
+   a screen edit.
+2. **TTL safety-net / eviction** — every `cache_set` passes `ttl_sec=[settings.<ttl_setting>]`
+   (default [N] min, env-overridable via `[TTL_ENV_VAR]`) so a missed write path (direct DB
+   patch, bulk import) self-heals and unused entries are evicted after the window rather than
+   living indefinitely.
+
+Neither layer alone is sufficient: TTL alone leaves data stale until expiry after a screen
+edit; invalidation alone leaves a missed write path stale forever.
+
+### Rules
+- One cache key per filter variant (e.g. `[prefix]:{type}:all`, `[prefix]:{type}:active`)
+- Serialize via the Pydantic output schema (`model_dump()` / `model_validate()`)
+- `cache_delete` ALL key variants of the affected type **after** `[db.commit()]`
+- The in-process fallback must be TTL-aware (e.g. `time.monotonic()`); multi-worker prod
+  MUST configure [Redis]
+
+[Include a canonical read-through + invalidate-on-write service code block using the
+ project's actual session style and helper names — one list/read function that checks cache
+ then populates it, and one write function that invalidates after commit.]
+
+See **architecture-deep-dive skill → Cache / Queue** for the canonical cache slot / TTL
+assignments.
 
 ## Search / AI Integration Rules
 
@@ -1047,6 +1096,8 @@ Run these checks after generating all files:
 - [ ] Search `"Redis"` across all files — DB slot table appears in **one file only** (architecture skill)
 - [ ] Search `"vector"` — "no separate vector DB" appears in **one file only** (architecture skill)
 - [ ] Search `"outbox"` — full outbox spec appears in **one file only** (backend-patterns skill)
+- [ ] If the project serves reference/master data + has a cache: the read-through cache pattern (read-through + invalidate-on-write **after** commit + TTL eviction, both layers) appears in **backend-patterns skill only**; the cache slot/TTL assignment stays in the **architecture skill**; service files never `import redis` directly
+- [ ] If the project has no reference/master data or no cache layer: the Reference/Master Data Cache Pattern section is **absent** (no dead section)
 - [ ] If a transaction/statement-mode pooler + prepared-statement async driver is used: the connection-pooling rule appears in **backend-patterns skill only** (canonical), with a ONE-line routing hint in `CLAUDE.md`
 - [ ] That rule names the **unique prepared-statement-name** mechanism as the fix (not just cache disabling), places args in **connect_args** (not top-level engine kwargs), covers **both** web and worker engines, and notes **migrations bypass the pooler**
 - [ ] If no pooler / session-mode / non-prepared-statement driver: the connection-pooling section is **absent** (no dead rules)

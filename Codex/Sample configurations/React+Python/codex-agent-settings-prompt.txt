@@ -29,6 +29,11 @@ Before generating anything, read the project to discover its actual structure:
 10. Confirm the relative path to the frontend directory (needed for diagnostics hooks)
 11. Inspect whether `.agents/settings.json` already exists and preserve the compatible shape if it does
 12. Inspect whether `.agents/skills/`, `.agents/hooks/`, and `.agents/commands/` already exist
+13. Identify any reference / master data the system serves (lookup tables, category/config
+   tables, sequence configs, enums-in-DB) exposed via read-heavy `GET` endpoints, and whether
+   a read-through cache helper already exists (e.g. `core/cache.py`) or a cache (Redis/equivalent)
+   is available. Note the env var / setting that controls its TTL/eviction window and which
+   admin/screen write paths must invalidate it.
 
 Then generate only Codex-supported repository resources, preferring:
 
@@ -47,6 +52,7 @@ Each fact has exactly ONE canonical home. Violations cost tokens every conversat
 | Fact | Canonical file |
 |---|---|
 | Cache/DB slot assignments | `architecture-deep-dive` skill |
+| Reference/master-data read-through cache pattern (read-through + invalidate-on-write + TTL eviction) | `backend-patterns` skill |
 | Search/vector storage separation rule | `architecture-deep-dive` skill |
 | Transactional outbox full spec | `backend-patterns` skill |
 | Database connection-pooling implementation rules | `backend-patterns` skill, with a one-line routing hint in `AGENTS.md` and verification-only guidance in `testing-quality-gates` |
@@ -159,6 +165,9 @@ Use [S3/MinIO/Azure Blob/etc.] for: [asset types]
 Use [Redis/equivalent] with [N] dedicated slots:
 - `db=N` - [purpose] ([TTL, eviction policy, key pattern])
 - `db=N` - [purpose] ([TTL, eviction policy, key pattern])
+[If the system serves quasi-static reference/master data, one slot/use is a read-through
+ cache for it; state its TTL + eviction window here. The read-through + invalidate-on-write
+ implementation pattern is owned by `backend-patterns`; do not spec it here.]
 Do not mix data across slots.
 
 ### Event / Async Layer
@@ -216,6 +225,7 @@ Use this skill when the task involves:
 - [service/repository boundaries]
 - [database interaction]
 - [async processing]
+- [reference/master-data read-through caching]
 - [API design]
 
 ## Backend Baseline
@@ -306,6 +316,41 @@ Typical pattern:
 
 ### Redis DB Slot Strategy
 See `architecture-deep-dive -> Cache / Queue` for canonical DB slot assignments and TTL rules.
+
+## Reference / Master Data Cache Pattern
+
+Include this section only when the project serves quasi-static reference/master data
+(lookup tables, category/config tables, sequence configs, enums-in-DB) via read-heavy
+`GET` endpoints AND a cache (Redis/equivalent) is available. Omit it entirely if the project
+has no such data or no cache layer; do not emit a dead section.
+
+All read endpoints for quasi-static reference/master data MUST use a read-through cache
+helper (e.g. `app/core/cache.py`); never hit [DB] on every request for data that almost never
+changes, and never import the cache client (`[redis]`) directly in service files. Go through
+the helper (`cache_get` / `cache_set` / `cache_delete`).
+
+### Freshness - two layers, BOTH required
+1. Explicit invalidation on write - the service calls `cache_delete` for every affected key
+   variant AFTER the DB commit, whenever an admin/screen mutates the data (create / update /
+   deactivate). Primary mechanism: users see fresh data immediately after a screen edit.
+2. TTL safety-net / eviction - every `cache_set` passes `ttl_sec=[settings.<ttl_setting>]`
+   (default [N] min, env-overridable via `[TTL_ENV_VAR]`) so a missed write path (direct DB
+   patch, bulk import) self-heals and unused entries are evicted after the window rather than
+   living indefinitely.
+
+Neither layer alone is sufficient: TTL alone leaves data stale until expiry after a screen
+edit; invalidation alone leaves a missed write path stale forever.
+
+### Rules
+- One cache key per filter variant (e.g. `[prefix]:{type}:all`, `[prefix]:{type}:active`)
+- Serialize via the Pydantic output schema (`model_dump()` / `model_validate()`)
+- `cache_delete` ALL key variants of the affected type AFTER `[db.commit()]`
+- The in-process fallback must be TTL-aware (e.g. `time.monotonic()`); multi-worker prod
+  MUST configure [Redis]
+- Include a canonical read-through + invalidate-on-write service code block using the
+  project's actual session style and helper names.
+
+See `architecture-deep-dive -> Cache / Queue` for the canonical cache slot / TTL assignments.
 
 ## Search / AI Integration Rules
 
@@ -1043,6 +1088,8 @@ Run these checks after generating all files:
 - [ ] Search for `Redis` across generated files - DB slot definitions appear in one file only (`architecture-deep-dive`)
 - [ ] Search for `vector` / semantic storage rule - the canonical statement appears in one file only (`architecture-deep-dive`)
 - [ ] Search for `outbox` - the full outbox spec appears in one file only (`backend-patterns`)
+- [ ] If the project serves reference/master data + has a cache: the read-through cache pattern (read-through + invalidate-on-write AFTER commit + TTL eviction, both layers) appears in `backend-patterns` only; the cache slot/TTL assignment stays in `architecture-deep-dive`; service files never `import redis` directly
+- [ ] If the project has no reference/master data or no cache layer: the Reference/Master Data Cache Pattern section is absent (no dead section)
 - [ ] Cross-cutting domain principles appear only in `AGENTS.md`
 - [ ] `AGENTS.md` keeps Grep guidance to a single concise sentence
 - [ ] No generated file contains placeholder project names or unreplaced path placeholders
