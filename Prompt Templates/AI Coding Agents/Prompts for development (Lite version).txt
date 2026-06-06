@@ -1013,9 +1013,10 @@ Output file:
 ------------
 1. Docs/PHASE_1_SPRINT_PLAN.md
 
-Can you provide a two weeks springt plan to provide a usable modules in each sprint in the order of the workflow and usecase priority ? 
+Can you provide a two weeks sprint plan to provide a usable modules in each sprint in the order of the workflow and use-case priority ? 
+Each sprint should have clear description of the completed feature that can be shown as a user demo.
 
-Special isntructions: 
+Special instructions: 
 ----------------------
 Total duration for - 3 months
 
