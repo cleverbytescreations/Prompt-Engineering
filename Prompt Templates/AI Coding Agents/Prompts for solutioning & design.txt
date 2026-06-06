@@ -129,6 +129,350 @@ Output Format:
 
 ======================================================================================================================================
 
+>>> Prompt for generating use-case document
+
+# AI Agent Prompt: Generate Detailed Use-Case List Document
+
+## Role
+
+You are an expert Business Analyst, Solution Architect, and Requirements Engineer. Your task is to analyze the provided meeting transcript, scope document, proposal, notes, or requirement document and generate a structured, detailed, and implementation-ready **Use-Case List Document**.
+
+## Input Files / References
+
+Refer to the following source materials:
+
+1. `<Meeting Transcript / MoM / Scope Document / Proposal File>`
+2. `<Additional Requirement Notes, if any>`
+3. `<Existing Solution Architecture / Implementation Plan, if available>`
+
+## Objective
+
+Generate a comprehensive **Use-Case List Document** that captures all functional use cases identified from the provided source material.
+
+The output should help business stakeholders, architects, developers, QA teams, and project managers clearly understand the functional scope of the system.
+
+## Important Instructions
+
+1. Read and analyze all provided source materials carefully.
+2. Extract all explicit and implied use cases from the content.
+3. Do not limit the use cases only to directly stated requirements. Include logically required supporting use cases where necessary.
+4. Do not invent unrelated functionality outside the given scope.
+5. If any assumption is made, clearly mention it under an “Assumptions” section.
+6. Group use cases by module, business area, user journey, or functional domain.
+7. Keep the language business-readable but detailed enough for technical planning.
+8. Ensure the use cases are clear, non-overlapping, and actionable.
+9. Identify gaps, ambiguities, and open questions where the source material is unclear.
+10. Mark use cases as:
+
+* In Scope
+* Future Phase
+* Optional / Recommended
+* Needs Clarification
+
+## Output File
+
+Save the generated document as:
+
+`Docs/USE_CASE_LIST.md`
+
+## Expected Document Structure
+
+# Use-Case List Document
+
+## 1. Document Overview
+
+### 1.1 Purpose
+
+Explain the purpose of this use-case list document.
+
+### 1.2 Source References
+
+List the documents, transcripts, meeting notes, or inputs used to prepare this document.
+
+### 1.3 Scope Summary
+
+Provide a short summary of the overall system scope derived from the input material.
+
+### 1.4 Assumptions
+
+List any assumptions made while interpreting the source material.
+
+### 1.5 Out of Scope
+
+Mention any items that are clearly excluded from the current scope.
+
+---
+
+## 2. Stakeholders and User Roles
+
+Identify all user roles involved in the system.
+
+Use the following format:
+
+| Role            | Description | Key Responsibilities |
+| --------------- | ----------- | -------------------- |
+| Admin           |             |                      |
+| End User        |             |                      |
+| Approver        |             |                      |
+| External System |             |                      |
+
+Include both human users and external systems where applicable.
+
+---
+
+## 3. Module-wise Use-Case Summary
+
+Create a high-level summary table of all use cases.
+
+| Use Case ID | Module          | Use Case Name | Primary Actor | Priority | Scope Status |
+| ----------- | --------------- | ------------- | ------------- | -------- | ------------ |
+| UC-001      | User Management | Create User   | Admin         | High     | In Scope     |
+| UC-002      | Authentication  | Login         | User          | High     | In Scope     |
+
+Use a consistent numbering format such as:
+
+`UC-001`, `UC-002`, `UC-003`
+
+---
+
+## 4. Detailed Use Cases
+
+For each use case, provide the following details.
+
+## UC-001: <Use Case Name>
+
+### Module
+
+`<Module Name>`
+
+### Scope Status
+
+`In Scope / Future Phase / Optional / Needs Clarification`
+
+### Priority
+
+`High / Medium / Low`
+
+### Primary Actor
+
+`<User Role>`
+
+### Supporting Actors
+
+`<Other user roles or systems involved>`
+
+### Description
+
+Briefly explain what this use case achieves.
+
+### Trigger
+
+Describe the event or user action that initiates the use case.
+
+### Preconditions
+
+List the conditions that must be true before the use case starts.
+
+### Main Flow
+
+Provide the standard successful flow as numbered steps.
+
+Example:
+
+1. User opens the registration screen.
+2. User enters required details.
+3. System validates the input.
+4. System saves the record.
+5. System displays a confirmation message.
+
+### Alternate Flows
+
+Describe alternate valid paths, if any.
+
+### Exception Flows
+
+Describe failure scenarios, validation errors, permission failures, duplicate records, integration failures, etc.
+
+### Business Rules
+
+List business rules applicable to this use case.
+
+### Data Inputs
+
+List key input fields or data required.
+
+### Data Outputs
+
+List system-generated outputs, confirmations, reports, notifications, or records.
+
+### Notifications / Alerts
+
+Mention email, SMS, in-app, or other notifications involved.
+
+### Audit / Logging Requirements
+
+Mention whether the system should capture audit logs, activity history, user actions, timestamps, or status changes.
+
+### Security / Access Control
+
+Mention role permissions and data access restrictions.
+
+### Integration Requirements
+
+Mention any dependency on third-party systems, APIs, payment gateways, identity providers, OCR services, notification gateways, etc.
+
+### Acceptance Criteria
+
+Provide clear acceptance criteria in bullet points.
+
+Example:
+
+* User should be able to submit the form with valid data.
+* System should prevent duplicate records.
+* System should display validation messages for missing mandatory fields.
+* System should record the created date, created by, and status.
+
+### Open Questions
+
+List unresolved questions or clarifications required for this use case.
+
+---
+
+## 5. Functional Module Breakdown
+
+Group use cases by module.
+
+Example:
+
+### 5.1 Authentication and Access Control
+
+* UC-001: Login
+* UC-002: Logout
+* UC-003: Forgot Password
+* UC-004: Role-Based Access Control
+
+### 5.2 Master Data Management
+
+* UC-005: Create Master Record
+* UC-006: Update Master Record
+* UC-007: Deactivate Master Record
+
+### 5.3 Core Business Process
+
+* UC-008: Submit Application
+* UC-009: Review Application
+* UC-010: Approve / Reject Application
+
+### 5.4 Reports and Dashboard
+
+* UC-011: View Dashboard
+* UC-012: Generate Report
+* UC-013: Export Report
+
+---
+
+## 6. Use-Case Dependency Matrix
+
+Create a dependency matrix showing relationships between use cases.
+
+| Use Case ID | Depends On | Dependency Description                             |
+| ----------- | ---------- | -------------------------------------------------- |
+| UC-005      | UC-001     | User must be authenticated before creating records |
+| UC-010      | UC-008     | Application must be submitted before approval      |
+
+---
+
+## 7. Use-Case Priority Matrix
+
+Classify use cases by implementation priority.
+
+| Priority | Use Cases              |
+| -------- | ---------------------- |
+| High     | UC-001, UC-002, UC-003 |
+| Medium   | UC-004, UC-005         |
+| Low      | UC-006                 |
+
+---
+
+## 8. Phase-wise Classification
+
+Classify use cases into implementation phases if the source material indicates phased delivery.
+
+| Phase         | Use Cases              | Remarks               |
+| ------------- | ---------------------- | --------------------- |
+| Phase 1 / MVP | UC-001, UC-002, UC-003 | Core functionality    |
+| Phase 2       | UC-004, UC-005         | Enhancements          |
+| Future Phase  | UC-006                 | Recommended for later |
+
+If the input does not mention phases, suggest a logical MVP and future-phase split.
+
+---
+
+## 9. Non-Functional Considerations Derived from Use Cases
+
+Mention non-functional needs identified from the use cases, such as:
+
+* Security
+* Performance
+* Availability
+* Auditability
+* Scalability
+* Data privacy
+* Backup and recovery
+* Accessibility
+* Compliance
+* Integration reliability
+
+Do not over-elaborate; keep this section focused on what is relevant to the use cases.
+
+---
+
+## 10. Gaps, Ambiguities, and Clarifications Required
+
+Create a table of unclear or missing information.
+
+| Area          | Gap / Ambiguity                   | Impact                                | Clarification Required          |
+| ------------- | --------------------------------- | ------------------------------------- | ------------------------------- |
+| User Roles    | Approver role not clearly defined | Access control design may be affected | Confirm approval hierarchy      |
+| Notifications | SMS requirement not confirmed     | Impacts integration and cost          | Confirm whether SMS is required |
+
+---
+
+## 11. Final Use-Case Checklist
+
+Provide a checklist that can be used for review.
+
+| Use Case ID | Use Case Name | Reviewed | Confirmed by Client | Remarks |
+| ----------- | ------------- | -------- | ------------------- | ------- |
+| UC-001      | Login         | [ ]      | [ ]                 |         |
+| UC-002      | Create Record | [ ]      | [ ]                 |         |
+
+---
+
+## Quality Validation Rules
+
+Before finalizing the document, validate the following:
+
+1. Every major requirement from the source material is mapped to at least one use case.
+2. Every use case has a clear actor and business objective.
+3. Use cases are not duplicated.
+4. Use cases are grouped logically by module.
+5. In-scope and future-scope items are clearly separated.
+6. Assumptions are explicitly listed.
+7. Open questions are clearly captured.
+8. The document is suitable for review by both business and technical stakeholders.
+
+## Output Format
+
+Generate the final response in clean Markdown format.
+
+The final document should be ready to save as:
+
+`Docs/USE_CASE_LIST.md`
+
+
+======================================================================================================================================
+
 >>> Prompt to Generate Solution Architecture Document:
 
 You are an experienced Solution Architect.
