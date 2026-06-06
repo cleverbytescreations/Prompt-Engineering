@@ -2,23 +2,34 @@
 
 >>> Prompt to Generate System Architecture Document:
 
-You are an experienced Enterprise Solution Architect.
+You are an experienced System Architect / Technical Architect.
 
-Using the provided use case, requirement, scope, or functional specification documents, create a practical and implementation-ready **System Architecture Document** for the application described below.
+Using the provided use case, requirement, scope, functional specification, solution architecture, or implementation planning documents, create a practical and implementation-ready **System Architecture Document** for the application described below.
+
+The document must focus on **System Architecture / Technical Architecture**, not Solution Architecture.
+
+It should explain how the proposed solution will be technically implemented using application components, APIs, databases, storage, infrastructure, deployment units, security controls, observability, integrations, and operational mechanisms.
+
+Do not repeat business proposal, product vision, commercial justification, stakeholder benefits, or detailed functional scope unless they are required to explain a technical design decision.
 
 ---
 
 ## Special Instructions
 
-* Make the application suitable for **minimal hardware and infrastructure usage**.
-* Assume the **user load is very minimal**.
+* Make the architecture suitable for **minimal hardware and infrastructure usage** where MVP or low user load is expected.
+* Assume the **initial user load is minimal**, unless the reference documents specify otherwise.
 * Avoid over-engineering the MVP.
-* Clearly separate **MVP**, **full-scope**, and **future architecture**.
+* Clearly separate:
+  * MVP architecture
+  * Production / full-scope architecture
+  * Future technical architecture enhancements
 * Mark optional sections as applicable only if required.
 * Include tables and Mermaid diagrams wherever useful.
 * Do not implement code.
 * Do not invent unsupported features.
 * Clearly mention assumptions where details are missing.
+* Keep the tone technical, precise, and implementation-ready.
+* The document should be useful for developers, DevOps engineers, database engineers, testers, technical architects, infrastructure teams, and security reviewers.
 
 ---
 
@@ -26,11 +37,17 @@ Using the provided use case, requirement, scope, or functional specification doc
 
 ### Application Name
 
-**ArogyaM Patient Management System**
+**<Application Name>**
 
 ### Files to Refer
 
-* `Docs/usecases.md`
+* `<Requirement / use case document>`
+* `<Solution architecture document, if available>`
+* `<Implementation plan, if available>`
+* `<API specification, if available>`
+* `<Database design / DDL, if available>`
+* `<Deployment / hosting constraints, if available>`
+* `<Security / compliance requirements, if available>`
 
 ### Output File
 
@@ -40,16 +57,18 @@ Using the provided use case, requirement, scope, or functional specification doc
 
 ## Preferred Technology Stack
 
-* **UI:** React
-* **Backend:** FastAPI
-* **API:** REST
-* **Database:** PostgreSQL
-* **Authentication:** JWT
-* **Storage:** S3 / MinIO
-* **Search:** Database Full-text Search
-* **Cache / Queue:** Redis
-* **Deployment:** Docker
-* **AI / RAG:** Optional
+Use the following technology stack if applicable. If any item is not confirmed, mention it as an assumption.
+
+* **UI:** `<React / Angular / Next.js / Flutter / Other>`
+* **Backend:** `<FastAPI / Spring Boot / Node.js / Django / Other>`
+* **API:** `<REST / GraphQL / gRPC / Event-driven>`
+* **Database:** `<PostgreSQL / MySQL / MongoDB / Other>`
+* **Authentication:** `<JWT / OAuth2 / Keycloak / Auth0 / Other>`
+* **Storage:** `<S3 / MinIO / Local Storage / Not Applicable>`
+* **Search:** `<Database Full-text Search / OpenSearch / Elasticsearch / Not Applicable>`
+* **Cache / Queue:** `<Redis / Celery / BullMQ / Kafka / RabbitMQ / Not Applicable>`
+* **Deployment:** `<Docker / Kubernetes / VM / Cloud PaaS / Other>`
+* **AI / RAG:** `<Optional / Applicable / Not Applicable>`
 
 ---
 
@@ -59,29 +78,38 @@ Create the System Architecture Document with the following sections.
 
 ---
 
-## 1. Executive Summary
+## 1. Technical Executive Summary
 
 Include:
 
-* Purpose of the solution
-* Business context
-* Key business problems addressed
-* Expected benefits
-* Target users / stakeholders
-* High-level solution summary
+* Purpose of this System Architecture Document
+* Brief application context required for technical understanding
+* Summary of the proposed technical architecture
+* Key technical components
+* MVP deployment approach
+* Production-readiness approach
+* Major technical assumptions
+
+Avoid detailed business benefits, product vision, stakeholder value, sales narrative, or commercial justification.
 
 ---
 
-## 2. Scope, Assumptions, Constraints, and Dependencies
+## 2. Architecture Boundary, Scope, Assumptions, Constraints, and Dependencies
 
 Include:
 
-* In-scope modules
-* Out-of-scope items
-* MVP scope
-* Future scope
+* What this System Architecture Document covers
+* What this document does not cover
+* Technical scope inherited from the requirement / solution architecture documents
+* MVP technical scope
+* Production / full-scope technical scope
+* Future technical scope
 * Assumptions
-* Constraints and dependencies
+* Technical constraints
+* Infrastructure constraints
+* External dependencies
+
+Do not rewrite the full functional requirement document. Summarize only the scope required to explain technical implementation.
 
 ---
 
@@ -89,31 +117,35 @@ Include:
 
 Cover:
 
-* Scalability
+* Simplicity for MVP
+* Cost-conscious infrastructure
 * Security by design
-* Modular architecture
 * API-first design
+* Modular architecture
 * Maintainability
 * Observability
 * Performance optimization
+* Scalability
+* Reliability
 * Cloud/on-premise readiness
-* Cost-conscious design
 * AI-readiness, if applicable
+
+Explain each principle in terms of technical implementation decisions.
 
 ---
 
-## 4. Proposed Technology Stack with Reason for Selection
+## 4. Proposed Technology Stack with Technical Justification
 
 Provide a table with the following columns:
 
-| Layer | Recommended Technology | Purpose | Reason for Selection | MVP / Future / Optional |
-| ----- | ---------------------- | ------- | -------------------- | ----------------------- |
+| Layer | Recommended Technology | Purpose | Reason for Selection | MVP / Future / Optional | Risks / Limitations |
+| ----- | ---------------------- | ------- | -------------------- | ----------------------- | ------------------- |
 
 Cover the following layers where applicable:
 
 * Frontend
 * Backend
-* API Gateway
+* API Gateway / Reverse Proxy
 * Authentication
 * Database
 * Cache
