@@ -349,7 +349,10 @@ edit; invalidation alone leaves a missed write path stale forever.
 
 ### Rules
 - One cache key per filter variant (e.g. `[prefix]:{type}:all`, `[prefix]:{type}:active`)
-- Serialize via the Pydantic output schema (`model_dump()` / `model_validate()`)
+- Serialize via the Pydantic output schema using `model_dump(mode="json")` / `model_validate()`
+  — plain `model_dump()` leaves `datetime`/`UUID` fields as Python objects, which `json.dumps`
+  cannot serialize (`TypeError: Object of type datetime is not JSON serializable`); `mode="json"`
+  converts them to JSON-compatible strings first
 - `cache_delete` ALL key variants of the affected type **after** `[db.commit()]`
 - The in-process fallback must be TTL-aware (e.g. `time.monotonic()`); multi-worker prod
   MUST configure [Redis]
