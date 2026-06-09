@@ -56,6 +56,8 @@ Each fact has exactly ONE canonical home. Violations cost tokens every conversat
 | Search/vector storage separation rule | `architecture-deep-dive` skill |
 | Transactional outbox full spec | `backend-patterns` skill |
 | Database connection-pooling implementation rules | `backend-patterns` skill, with a one-line routing hint in `AGENTS.md` and verification-only guidance in `testing-quality-gates` |
+| Append-only table BRIN index rule, retention env var, purge service/repo/cron patterns | `backend-patterns` skill |
+| Append-only table partitioning trigger criteria (when to escalate to pg_partman) | `architecture-deep-dive` skill |
 | Cross-cutting principles (AI role, moderation) | `AGENTS.md` |
 | Frontend conventions | `frontend-guidelines` skill |
 | Lint, typecheck, tests, coverage, and Codex-safe Python/SQLite execution | `testing-quality-gates` skill |
@@ -197,6 +199,29 @@ Use async/event-driven flows for: [heavy operations]
 
 ## Scalability Thresholds
 [When each component should evolve; use real thresholds if available]
+
+### Append-Only Table Scale Strategy
+
+[INCLUDE THIS SUBSECTION when the project has any append-only table (audit log, event log,
+ notification log, backup log, or similar) expected to grow without bound. OMIT if none exist.]
+
+Document the three-phase escalation for every append-only, time-ordered table in the project:
+
+**Phase A — Index:** Use BRIN, not B-Tree, on `created_at` for any append-only table with
+`server_default=now()` and no out-of-order inserts. Full BRIN implementation rule is owned
+by `backend-patterns` skill — Append-Only / Time-Series Table Patterns.
+
+**Phase B — Retention:** Add a `<TABLE>_RETENTION_DAYS` env var (0 = disabled). A monthly
+cron script and an admin-only purge API endpoint keep the table bounded. Retention window
+should match the compliance requirement for the domain (e.g. 7 years / 2555 days for medical
+records). Full implementation pattern owned by `backend-patterns` skill.
+
+**Phase C — Declarative partitioning trigger:** State the concrete threshold at which to
+begin planning `pg_partman` monthly range partitioning for this project:
+`pg_total_relation_size('[table]') > 2 GB` OR row count > 2–5 million. At that scale, a
+retention DELETE can take minutes and hold locks; partition drops are O(1) and lock-free.
+Reference the project's partitioning design doc (e.g. Docs/audit-log-declarative-table-partitioning.md)
+for the full migration plan.
 
 ## When Giving Architecture Advice
 
@@ -375,6 +400,65 @@ All domain events ([event types]) must:
 
 Outbox polling worker (`[worker_file_path]`, [scheduler] every [interval]) reads
 `PENDING` events -> dispatches to [queue] -> sets `[PUBLISHED/FAILED/DEAD_LETTER]` after [N] retries.
+
+## Append-Only / Time-Series Table Patterns
+
+[INCLUDE THIS SECTION when the project has any append-only table (audit log, notification log,
+ event log, backup log, or similar) expected to grow without bound over time. OMIT entirely if
+ no such table exists in the schema — do not emit a dead section.]
+
+Apply these patterns to every append-only, time-ordered table in the project.
+
+### Index choice: BRIN, not B-Tree, on `created_at`
+
+Any append-only table with `server_default=now()` and no out-of-order inserts must use
+a **BRIN** index on `created_at` instead of B-Tree:
+```sql
+CREATE INDEX idx_[table]_created_brin ON [table] USING BRIN (created_at);
+```
+BRIN stores only min/max per 128-page block range — ~8–12× less disk/write overhead
+than B-Tree with equivalent range-scan coverage. Fall back to B-Tree only when
+out-of-order inserts are possible.
+
+### Retention configuration pattern
+
+Expose the retention window as a settings/config env var; compute the cutoff at
+call-time, never store it:
+```python
+[table]_retention_days: int = Field(default=[N])  # e.g. 2555 = 7 years; 0 = disabled
+cutoff = datetime.now(tz=timezone.utc) - timedelta(days=settings.[table]_retention_days)
+```
+
+### Repository: `count_expired` / `delete_expired` (no commit in repo)
+
+```python
+def count_expired(db: Session, cutoff: datetime) -> int: ...   # dry-run safe
+def delete_expired(db: Session, cutoff: datetime) -> None: ... # service commits
+```
+
+### Service: atomic delete + audit trace
+
+Perform `count_expired` → `delete_expired` → `write_audit(action="PURGE_[TABLE]")` →
+`db.commit()` in a **single transaction**. If the commit fails, neither the deletion nor
+the evidence of it persists. Always support a `dry_run: bool = False` flag.
+
+### API endpoint: admin-only with `?dry_run`
+
+Gate behind an admin-only permission. Return a consistent envelope:
+```json
+{"purged_count": N, "cutoff_before": "ISO-datetime", "dry_run": false, "skipped": false}
+```
+
+### Cron script (`[backend_dir]/scripts/purge_[table].py`)
+
+Standalone script reading the same env vars as the API. Must accept `--dry-run`,
+exit `0` on success, `1` on error.
+Suggested monthly schedule: `0 2 1-7 * 0  docker compose exec -T api python scripts/purge_[table].py`
+
+### Declarative partitioning escalation
+
+Reference `architecture-deep-dive` skill — Append-Only Table Scale Strategy for
+when to escalate to `pg_partman` monthly partitioning (trigger: 2 GB or 2–5M rows).
 
 ## Security Rules
 - [RBAC/audit/org access rule]
@@ -1105,6 +1189,11 @@ Run these checks after generating all files:
 - [ ] Search `select(`, `insert(`, `update(`, and `delete(` in `[services_path]` - service files should not own SQLAlchemy query construction
 - [ ] Verify `[repositories_path]` exists or is generated when backend services require SQLAlchemy queries
 - [ ] Verify each new or substantially changed SQLAlchemy-backed service delegates query construction to repository/data-access functions
+- [ ] For every append-only table in the schema: verify `created_at` index in migrations uses `USING BRIN`, not a plain B-Tree
+- [ ] For every append-only table: verify a `<TABLE>_RETENTION_DAYS` env var exists in the settings/config module and env example files
+- [ ] For every append-only table: verify `count_expired` / `delete_expired` exist in the repository and a purge admin endpoint exists in the router
+- [ ] For every append-only table: verify a `scripts/purge_<table>.py` cron script exists with `--dry-run` support
+- [ ] Append-only BRIN rule and purge patterns appear in `backend-patterns` only; `architecture-deep-dive` contains only the escalation trigger criteria (2 GB / 2–5M rows threshold)
 - [ ] Python/pytest commands include `python -m pytest ... -p no:cacheprovider` only when Python tooling is detected
 - [ ] Python coverage commands avoid file-backed SQLite migration probes and explain coverage.py file errors can be environment-blocked
 - [ ] Alembic/PostgreSQL-specific checks use Docker/Postgres rather than SQLite when PostgreSQL behavior matters
